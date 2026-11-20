@@ -9,8 +9,9 @@ those decisions may be revised before implementation with consequences recorded.
 **Status:** approved by the user, 2026-11-19.
 
 The name refers to reduction that preserves equivalence. The target Python
-import name is `equireduce`. Availability of the PyPI name and a separate
-repository has not yet been checked.
+import name is `equireduce`. The separate repository is
+[github.com/konst1970/EquiReduce](https://github.com/konst1970/EquiReduce).
+Availability of the PyPI name has not yet been checked.
 
 ## ADR-002 — independent Python package using SymPy
 
@@ -57,7 +58,7 @@ does not execute Python code.
 
 ## Open decisions
 
-Before implementation or release, determine the license, repository address,
+Before implementation or release, determine the license,
 distribution name availability, final JSON Schema, and minimum supported
 formal export subset. The experimental DAE API and Lean abstractions are
 covered by ADR-007 below. Listing these open questions does not claim that

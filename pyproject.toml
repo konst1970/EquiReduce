@@ -10,6 +10,10 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = ["sympy>=1.14,<2"]
 
+[project.urls]
+Repository = "https://github.com/konst1970/EquiReduce"
+Issues = "https://github.com/konst1970/EquiReduce/issues"
+
 [project.optional-dependencies]
 dev = ["pytest>=8", "hypothesis>=6", "jsonschema>=4", "ruff>=0.15", "mypy>=1.15", "build>=1.2", "twine>=6"]
 docs = ["Sphinx>=8,<9", "myst-parser>=4,<5"]

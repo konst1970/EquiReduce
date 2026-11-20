@@ -57,9 +57,13 @@ Sphinx autodoc imports the local package for the API reference.
 Installing `.[docs]` includes the core and SymPy; Lean is not required for
 documentation. `docs/requirements.txt` contains only Sphinx and MyST.
 
-The `.github/workflows/ci.yml` template targets a separate repository.
-While the directory is nested in Dnipro, GitHub does not run it automatically.
-Local checks run separately; GitHub runs have not yet been performed.
+The standalone repository is [konst1970/EquiReduce](https://github.com/konst1970/EquiReduce).
+Its `.github/workflows/ci.yml` runs on pushes and pull requests, with Python
+3.11/3.13 checks and a separate pinned Lean job. CI downloads the derivative
+product and exponential modules required by smooth charge proofs.
+Dnipro adapter tests are optional integrations: without a parent Dnipro checkout,
+those tests explicitly skip; the independent mathematical tests still run.
+Actual hosted results are available on the repository Actions page.
 
 HTML supports formulas through MathJax; the default Sphinx configuration
 loads it from a CDN when viewing pages. Offline publication requires a local
@@ -95,8 +99,10 @@ material MIT-licensed. Preserve SymPy, Lean, Mathlib, and transitive component
 licenses according to their terms. Dependency source is not copied into the
 package unnecessarily; `.lake` is not published.
 
-The public PyPI name `equireduce` and repository address have not been
-registered as part of this work. They must be checked before release.
+The repository address is https://github.com/konst1970/EquiReduce.
+Availability of the public PyPI distribution name `equireduce` must still be
+checked before a package release; publishing source to GitHub does not publish
+a PyPI distribution or assign a distribution license.
 
 ## Packaging and release
 

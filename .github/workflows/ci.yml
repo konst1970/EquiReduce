@@ -35,6 +35,6 @@ jobs:
       - run: python -m pip install -e '.[dev]'
       - run: MATHLIB_NO_CACHE_ON_UPDATE=1 lake update
         working-directory: lean
-      - run: lake exe cache get Mathlib.Basic.Real.Basic Mathlib.Tactic.FieldSimp Mathlib.Tactic.LinearCombination Mathlib.Tactic.Linarith Mathlib.Tactic.NormNum Mathlib.Tactic.Ring Mathlib.Analysis.Calculus.Deriv.Pow Mathlib.Analysis.Calculus.Deriv.Inv Mathlib.Analysis.Calculus.Deriv.Add Mathlib.Tactic.Convert
+      - run: lake exe cache get Mathlib.Basic.Real.Basic Mathlib.Tactic.FieldSimp Mathlib.Tactic.LinearCombination Mathlib.Tactic.Linarith Mathlib.Tactic.NormNum Mathlib.Tactic.Ring Mathlib.Analysis.Calculus.Deriv.Pow Mathlib.Analysis.Calculus.Deriv.Inv Mathlib.Analysis.Calculus.Deriv.Add Mathlib.Analysis.Calculus.Deriv.Prod Mathlib.Analysis.SpecialFunctions.ExpDeriv Mathlib.Tactic.Convert
         working-directory: lean
       - run: python -m pytest -m lean

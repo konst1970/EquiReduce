@@ -3,7 +3,7 @@
 The affine reduction primitives in `src/equireduce/_core.py` and the initial
 exporter in `_lean_export.py` were adapted from the Dnipro prototype
 (`dnipro/analysis/reduction.py` and `lean_reduction.py`, repository commit
-`f634f73d2880fb1f57b36c506086a0a62980c056`). The extraction and subsequent
+[`f634f73d2880fb1f57b36c506086a0a62980c056`](https://github.com/konst1970/dnipro4/commit/f634f73d2880fb1f57b36c506086a0a62980c056)). The extraction and subsequent
 changes were requested by the project owner in this workspace.
 
 EquiReduce adds its own application-independent input contract, domain tracking,

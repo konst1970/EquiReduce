@@ -44,10 +44,11 @@ algebraic block. This is not general reduction of arbitrary DAEs or a separate
 continuity theorem for a `C1` derivative. The contract refinement is recorded
 in [ADR-007](decisions.md).
 
-The GitHub CI template targets a future separate repository. The nested
-workflow does not run automatically in the current Dnipro repository;
-GitHub runs are not counted as completed. Python 3.13 was checked locally;
-other versions have not yet been run in CI.
+The original nested GitHub workflow did not run in Dnipro. In the standalone
+repository [konst1970/EquiReduce](https://github.com/konst1970/EquiReduce),
+it is configured for pushes and pull requests with Python 3.11/3.13 and a
+separate pinned Lean job. Historical validation below used Python 3.13;
+hosted results are reported separately by GitHub Actions.
 
 ## How TDD was performed
 
@@ -150,6 +151,21 @@ A smooth `Piecewise` and a concrete BJT artifact with a source snapshot were
 also restored without importing Dnipro. The wheel contains `py.typed`, JSON
 Schema, and pinned Lean configuration; caches, virtual environments, and Dnipro
 code are excluded.
+
+## Standalone repository validation
+
+The standalone checkout contains only the EquiReduce subtree and preserves
+its two source commits. It was checked separately from the parent project:
+
+- Full suite: **246 passed, 8 skipped** on Python 3.13, including actual Lean
+  compilations. The eight skips require the optional parent Dnipro adapter.
+- Ruff and formatting checks pass; mypy reports no issues in 29 source files.
+- Sphinx builds with warnings treated as errors.
+- Wheel and sdist build; both pass `twine check`.
+- An isolated wheel import, smooth implicit reduction, Lean source generation,
+  and artifact replay pass without an importable Dnipro package.
+- The GitHub workflow includes the derivative product and exponential caches
+  needed by smooth proofs. Hosted runs remain a separate verification result.
 
 ## Current version limits
 

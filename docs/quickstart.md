@@ -46,7 +46,7 @@ Install Elan/Lean separately. Prepare the pinned Lake project:
 ```bash
 cd lean
 MATHLIB_NO_CACHE_ON_UPDATE=1 lake update
-lake exe cache get Mathlib.Basic.Real.Basic Mathlib.Tactic.FieldSimp Mathlib.Tactic.LinearCombination Mathlib.Tactic.Linarith Mathlib.Tactic.NormNum Mathlib.Tactic.Ring Mathlib.Analysis.Calculus.Deriv.Pow Mathlib.Analysis.Calculus.Deriv.Inv Mathlib.Analysis.Calculus.Deriv.Add Mathlib.Tactic.Convert
+lake exe cache get Mathlib.Basic.Real.Basic Mathlib.Tactic.FieldSimp Mathlib.Tactic.LinearCombination Mathlib.Tactic.Linarith Mathlib.Tactic.NormNum Mathlib.Tactic.Ring Mathlib.Analysis.Calculus.Deriv.Pow Mathlib.Analysis.Calculus.Deriv.Inv Mathlib.Analysis.Calculus.Deriv.Add Mathlib.Analysis.Calculus.Deriv.Prod Mathlib.Analysis.SpecialFunctions.ExpDeriv Mathlib.Tactic.Convert
 cd ..
 ```
 

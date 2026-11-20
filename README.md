@@ -4,6 +4,8 @@
 proofs.** An independent Python library with SymPy input and output,
 and certificate verification in Lean 4 + Mathlib.
 
+Source repository: [konst1970/EquiReduce](https://github.com/konst1970/EquiReduce).
+
 > Status as of 2026-11-20: development version `0.1.0.dev0` is available.
 > The implementation includes the algebraic core, certificates, Lean backend,
 > portable artifacts, affine coordinates, and bounded search. Lean verifies
@@ -52,10 +54,12 @@ For development, read the [detailed ER-01–ER-19 implementation plan](docs/impl
 
 ## Building the documentation
 
-Run these commands from `EquiReduce`. Install the local package for the API
+Clone the standalone repository and install the local package for the API
 reference; Lean and Mathlib are not required to build the documentation:
 
 ```bash
+git clone https://github.com/konst1970/EquiReduce.git
+cd EquiReduce
 python3 -m venv .venv
 .venv/bin/python -m pip install -e '.[dev,docs]'
 .venv/bin/python -m sphinx -n -W --keep-going -b html docs docs/_build/html
