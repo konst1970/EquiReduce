@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "equireduce"
+version = "0.1.0.dev0"
+description = "Exact symbolic equation reduction with independently checked certificates"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = ["sympy>=1.14,<2"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "hypothesis>=6", "jsonschema>=4", "ruff>=0.15", "mypy>=1.15", "build>=1.2", "twine>=6"]
+docs = ["Sphinx>=8,<9", "myst-parser>=4,<5"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+equireduce = ["py.typed", "resources/*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+markers = ["lean: real Lean/Mathlib compilation", "integration: external process or installed package", "slow: expensive regression"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+
+[tool.mypy]
+files = ["src/equireduce"]
+ignore_missing_imports = true
+check_untyped_defs = true

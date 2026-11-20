@@ -1,0 +1,6 @@
+include CHANGELOG.md PROVENANCE.md
+recursive-include docs *.md *.py *.txt
+recursive-exclude docs/_build *
+recursive-include examples *.py
+include lean/lean-toolchain lean/lakefile.toml lean/lake-manifest.json
+recursive-include src/equireduce/resources *

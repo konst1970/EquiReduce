@@ -1,0 +1,483 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "EquiReduce implicit DAE artifact v1",
+  "description": "Shape validation only; certificate replay and proof auditing remain necessary.",
+  "type": "object",
+  "properties": {
+    "schema": {
+      "const": "equireduce.implicit/v1"
+    },
+    "payload": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/value"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "record"
+            },
+            "name": {
+              "enum": [
+                "ImplicitResult"
+              ]
+            }
+          },
+          "required": [
+            "t",
+            "name"
+          ]
+        }
+      ]
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "mathematical_sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "versions": {
+      "type": "object",
+      "properties": {
+        "python": {
+          "type": "string"
+        },
+        "sympy": {
+          "type": "string"
+        },
+        "equireduce": {
+          "type": "string"
+        },
+        "exporter": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "python",
+        "sympy",
+        "equireduce",
+        "exporter"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "required": [
+    "schema",
+    "payload",
+    "sha256",
+    "mathematical_sha256",
+    "versions"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "value": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string"
+        },
+        {
+          "type": "integer"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "boolean"
+            },
+            "v": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "t",
+            "v"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "float"
+            },
+            "v": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "t",
+            "v"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "integer"
+            },
+            "v": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$",
+              "maxLength": 1000
+            }
+          },
+          "required": [
+            "t",
+            "v"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "rational"
+            },
+            "p": {
+              "type": "string",
+              "pattern": "^-?[0-9]+$",
+              "maxLength": 1000
+            },
+            "q": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]*$",
+              "maxLength": 1000
+            }
+          },
+          "required": [
+            "t",
+            "p",
+            "q"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "symbol"
+            },
+            "id": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "name": {
+              "type": "string",
+              "maxLength": 256
+            },
+            "assumptions": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "boolean"
+              }
+            }
+          },
+          "required": [
+            "t",
+            "id",
+            "name",
+            "assumptions"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "tuple"
+            },
+            "args": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/value"
+              },
+              "maxItems": 100000
+            }
+          },
+          "required": [
+            "t",
+            "args"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "map"
+            },
+            "pairs": {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "prefixItems": [
+                  {
+                    "$ref": "#/$defs/value"
+                  },
+                  {
+                    "$ref": "#/$defs/value"
+                  }
+                ],
+                "items": false,
+                "minItems": 2,
+                "maxItems": 2
+              },
+              "maxItems": 100000
+            }
+          },
+          "required": [
+            "t",
+            "pairs"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "matrix"
+            },
+            "rows": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100000
+            },
+            "cols": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 100000
+            },
+            "args": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/value"
+              },
+              "maxItems": 100000
+            }
+          },
+          "required": [
+            "t",
+            "rows",
+            "cols",
+            "args"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "expr"
+            },
+            "name": {
+              "enum": [
+                "Abs",
+                "Add",
+                "And",
+                "Equality",
+                "GreaterThan",
+                "LessThan",
+                "Max",
+                "Min",
+                "Mul",
+                "Not",
+                "Or",
+                "Pow",
+                "StrictGreaterThan",
+                "StrictLessThan",
+                "Unequality",
+                "cos",
+                "exp",
+                "log",
+                "sin",
+                "tan"
+              ]
+            },
+            "args": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/value"
+              },
+              "maxItems": 100000
+            }
+          },
+          "required": [
+            "t",
+            "name",
+            "args"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "function"
+            },
+            "name": {
+              "type": "string",
+              "maxLength": 256
+            },
+            "args": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/value"
+              },
+              "maxItems": 100000
+            },
+            "assumptions": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "boolean"
+              }
+            }
+          },
+          "required": [
+            "t",
+            "name",
+            "args",
+            "assumptions"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "record"
+            },
+            "name": {
+              "enum": [
+                "AffineTransform",
+                "Block",
+                "CandidateSummary",
+                "Certificate",
+                "ComplexityMetrics",
+                "CoordinateCertificate",
+                "CoreResult",
+                "DAECertificate",
+                "DAEResult",
+                "DAESystem",
+                "FormalCheck",
+                "InitialCheck",
+                "Result",
+                "SearchReport",
+                "Step",
+                "SymbolicCheck",
+                "System",
+                "ImplicitSystem",
+                "ImplicitResult",
+                "ImplicitCertificate",
+                "ImplicitCoordinateCertificate",
+                "TimeAffineTransform",
+                "ImplicitInitialCheck",
+                "DerivativeNormalization",
+                "ImplicitStructure",
+                "SymbolicRank",
+                "PartitionCandidate",
+                "ImplicitPartitionReport",
+                "SmoothFunction"
+              ]
+            },
+            "fields": {
+              "type": "object",
+              "additionalProperties": {
+                "$ref": "#/$defs/value"
+              }
+            }
+          },
+          "required": [
+            "t",
+            "name",
+            "fields"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "enum"
+            },
+            "name": {
+              "enum": [
+                "CertificateStatus",
+                "ProofStatus",
+                "AffineStatus"
+              ]
+            },
+            "v": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "t",
+            "name",
+            "v"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "derivative"
+            },
+            "expr": {
+              "$ref": "#/$defs/value"
+            },
+            "variable": {
+              "$ref": "#/$defs/value"
+            }
+          },
+          "required": [
+            "t",
+            "expr",
+            "variable"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "t": {
+              "const": "piecewise"
+            },
+            "pairs": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "array",
+                "prefixItems": [
+                  {
+                    "$ref": "#/$defs/value"
+                  },
+                  {
+                    "$ref": "#/$defs/value"
+                  }
+                ],
+                "minItems": 2,
+                "maxItems": 2
+              }
+            }
+          },
+          "required": [
+            "t",
+            "pairs"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    }
+  }
+}
