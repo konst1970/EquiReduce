@@ -17,7 +17,6 @@ Source repository: [konst1970/EquiReduce](https://github.com/konst1970/EquiReduc
 > explicit Lean assumptions, and exact initial value and derivative samples.
 > Smooth charge laws, `exp`, explicit branches, and a concrete NPN/PNP charge
 > profile are supported; implicit JSON artifacts have independent replay.
-> This is not a published release.
 
 The library returns reduced equations, reconstruction formulas for eliminated
 variables, validity conditions, a transformation certificate, and its verification
