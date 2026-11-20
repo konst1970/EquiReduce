@@ -6,7 +6,7 @@ and certificate verification in Lean 4 + Mathlib.
 
 Source repository: [konst1970/EquiReduce](https://github.com/konst1970/EquiReduce).
 
-> Status as of 2026-11-20: development version `0.1.0.dev0` is available.
+> Status as of 2026-11-20: release version `0.1.0` is available.
 > The implementation includes the algebraic core, certificates, Lean backend,
 > portable artifacts, affine coordinates, and bounded search. Lean verifies
 > the 14 → 4, 4 → 3, and 14 → 3 examples. An experimental semi-explicit DAE
