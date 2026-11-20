@@ -92,17 +92,19 @@ The library does not install dependencies during ordinary reduction.
 
 ## License and code provenance
 
-Before publication, choose an EquiReduce license and confirm permission to
-extract source code and examples from Dnipro and other materials.
-The absence of `LICENSE` does not grant permission to declare someone else's
-material MIT-licensed. Preserve SymPy, Lean, Mathlib, and transitive component
-licenses according to their terms. Dependency source is not copied into the
-package unnecessarily; `.lake` is not published.
+EquiReduce is distributed under the
+[MIT License](https://github.com/konst1970/EquiReduce/blob/main/LICENSE), selected
+by the project owner. Code and example origins are recorded in `PROVENANCE.md`.
+The license text is included in source and wheel distributions; `pyproject.toml`
+declares the SPDX expression `MIT` using PEP 639 metadata.
+Preserve SymPy, Lean, Mathlib, and transitive component licenses according to
+their terms. Dependency source is not copied into the package unnecessarily;
+`.lake` is not published.
 
 The repository address is https://github.com/konst1970/EquiReduce.
 Availability of the public PyPI distribution name `equireduce` must still be
 checked before a package release; publishing source to GitHub does not publish
-a PyPI distribution or assign a distribution license.
+a PyPI distribution. The MIT source license is already assigned.
 
 ## Packaging and release
 

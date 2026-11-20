@@ -1,4 +1,4 @@
-include CHANGELOG.md PROVENANCE.md
+include LICENSE CHANGELOG.md PROVENANCE.md
 recursive-include docs *.md *.py *.txt
 recursive-exclude docs/_build *
 recursive-include examples *.py

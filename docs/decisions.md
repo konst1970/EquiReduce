@@ -58,7 +58,7 @@ does not execute Python code.
 
 ## Open decisions
 
-Before implementation or release, determine the license,
+Before a package release, determine
 distribution name availability, final JSON Schema, and minimum supported
 formal export subset. The experimental DAE API and Lean abstractions are
 covered by ADR-007 below. Listing these open questions does not claim that
@@ -79,3 +79,12 @@ addition, multiplication, integer powers, and inversion with explicit conditions
 Nonsmooth and nonrational reconstructions are rejected rather than relying on
 implicit regularity assumptions. General time-dependent charts and high index
 remain separate follow-up tasks.
+
+## ADR-008 — MIT license
+
+**Status:** selected by the project owner, 2026-11-20.
+
+EquiReduce code and documentation in the standalone repository use the MIT
+License. The root `LICENSE` contains the full text and copyright attribution.
+Package metadata declares `MIT`, and both wheel and sdist include the license.
+Separately installed third-party dependencies retain their own licenses.

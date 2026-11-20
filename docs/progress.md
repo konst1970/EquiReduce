@@ -29,7 +29,7 @@ The historical ER results below refer to the previously implemented subset.
 | ER-09 | done | Scalar, sequential, and block bidirectional proofs; new 14 → 4 example |
 | ER-10 | done | Actual runner, proof modes, axiom audit, hashes, and logs |
 | ER-11 | done | JSON AST, machine-readable schema, integrity checks, and reproduction bundle |
-| ER-12 | in_progress | Technical version works; license and public release metadata are undecided |
+| ER-12 | in_progress | Technical version works; MIT selected; PyPI name availability and stable-release metadata remain open |
 | ER-13 | done | Affine charts, independent composition checks, and complete Lean proof |
 | ER-14 | done | Deterministic budgeted search, metrics, and actual Lean measurements |
 | ER-15 | done | Adapter, stationary projection, formal 4 → 3 / 14 → 3; the old DC reducer delegates to the shared EquiReduce core |
@@ -167,6 +167,10 @@ its two source commits. It was checked separately from the parent project:
 - The GitHub workflow includes the derivative product and exponential caches
   needed by smooth proofs. Hosted runs remain a separate verification result.
 
+The owner selected the MIT License for the standalone code and documentation.
+The complete text is in `LICENSE` and included in wheel and sdist, with SPDX
+expression `MIT` in package metadata.
+
 ## Current version limits
 
 - Search is optimal only among evaluated charts of the declared family.
@@ -181,6 +185,6 @@ its two source commits. It was checked separately from the parent project:
 - The implementation did not publish a release or create automatic Git commits.
 
 The remaining original-plan work is the release part of ER-12: decisions on
-licensing, name availability, and public release metadata. Technical stages
+name availability and public release metadata; the project owner selected MIT. Technical stages
 are complete within the documented support limits. The package remains
 `0.1.0.dev0`, unpublished.

@@ -69,4 +69,11 @@ Open `docs/_build/html/index.html`. You can also read the Markdown files
 directly on GitHub or in an editor without building them.
 
 The availability of the distribution name `equireduce` must be checked before
-publication. A license for the new package must also be chosen before release.
+publication.
+
+## License
+
+EquiReduce is distributed under the [MIT License](LICENSE).
+Copyright (c) 2026 konst1970.
+See [code provenance](PROVENANCE.md) for the origin of extracted code.
+Third-party dependencies retain their own licenses.

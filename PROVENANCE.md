@@ -11,6 +11,8 @@ certificate checks, proof auditing, and portable artifact format. It has no
 runtime import of Dnipro. Third-party dependencies are installed separately;
 their source and compiled caches are not part of this Python distribution.
 
-A distribution license and public release metadata have not yet been chosen.
-The development version is not a declaration that the package is ready for
-publication or that upstream material has been relicensed.
+EquiReduce as distributed in this repository is licensed under the MIT License
+(see `LICENSE`), selected by the project owner. This applies to the EquiReduce
+code and documentation distributed here; separately installed dependencies
+retain their own licenses. The development version is not a declaration that
+a stable package release has been published.

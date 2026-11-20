@@ -2,6 +2,8 @@
 
 ## 0.1.0.dev0 — in development
 
+- Standalone GitHub repository with MIT licensing and SPDX package metadata.
+
 - Independent immutable SymPy system model and explicit real domains.
 - Exact affine scalar/block elimination and reconstruction.
 - Certificate replay with source-domain and affinity validation.
