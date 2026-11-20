@@ -1,69 +1,69 @@
-# Призначення й поточний стан
+# Purpose and current status
 
-## Задача бібліотеки
+## The library's task
 
-Прийняти систему рівнянь як об'єкти SymPy, знайти обґрунтовані точні
-перетворення, зменшити число невідомих або складність виразів і повернути
-результат разом із формулами реконструкції та доказом еквівалентності.
+Accept an equation system as SymPy objects, find justified exact transformations,
+reduce the number of unknowns or expression complexity, and return the result
+with reconstruction formulas and an equivalence proof.
 
-Система може походити з електроніки, механіки, кінетики реакцій, теплових
-моделей або іншої предметної області. Ядро EquiReduce не повинно знати,
-що означає конкретний струм, сила чи концентрація.
+The system may come from electronics, mechanics, reaction kinetics, thermal
+models, or another application. The EquiReduce core must not need to know what
+a particular current, force, or concentration represents.
 
-Скорочення не дорівнює розв'язанню: на виході може залишитися нелінійна
-неявна система, для якої користувач обере окремий числовий або символьний
-розв'язувач. Глобальний мінімум розмірності й універсальне спрощення
-довільних нелінійних систем не гарантуються.
+Reduction is different from solving: the output may remain a nonlinear implicit
+system for which the user chooses a separate numerical or symbolic solver.
+A global minimum dimension and universal simplification of arbitrary nonlinear
+systems are not guaranteed.
 
-## Підтверджена вихідна база
+## Verified starting point
 
-На її основі реалізована незалежна версія `0.1.0.dev0` у `src/equireduce`.
-Новий конвеєр компілює 14 → 4, 4 → 3, 14 → 3, два неелектричні
-приклади та теореми відповідності траєкторій напівявних ДАЕ.
-Поточний стан: [журнал TDD](progress.md).
+The independent `0.1.0.dev0` implementation in `src/equireduce` is based on this
+starting point. The new pipeline compiles 14 → 4, 4 → 3, 14 → 3, two examples
+outside electronics, and semi-explicit DAE trajectory correspondence theorems.
+See the [TDD log](progress.md) for the current status.
 
-У Dnipro вже є прототипи в `dnipro/analysis/`: афінна декомпозиція,
-виключення одиничних змінних і блоків, перетворення координат, обмежений
-пошук, метрики, сертифікати, генерація Lean та аудит-артефакти.
-Вони прив'язані до типу `dnipro.mna.residual_system.ResidualSystem`
-і вимагають `domain="dc"`; це треба усунути під час виділення бібліотеки.
+The original Dnipro prototypes in `dnipro/analysis/` include affine decomposition,
+scalar and block elimination, coordinate transformations, bounded search,
+metrics, certificates, Lean generation, and audit artifacts. They are tied to
+`dnipro.mna.residual_system.ResidualSystem` and require `domain="dc"`;
+these dependencies must be removed when extracting the library.
 
-Для прикладу BJT 14 → 4 теорема `mna_iff_eq2` фактично скомпільована
-Lean 4.36.0 із Mathlib v4.36.0, ревізія
+For the BJT 14 → 4 example, theorem `mna_iff_eq2` was compiled with Lean 4.36.0
+and Mathlib v4.36.0, revision
 `fc4f59e577feb1a4956671bc04ac18aaaf8cd842`.
-Журнал Dnipro: `docs/eq2_from_21_derivation/out/lean_verification.log`;
-машинний протокол: `lean_verification.json` у тій самій папці.
-Компіляція виконувалась із `-DwarningAsError=true`.
+Dnipro log: `docs/eq2_from_21_derivation/out/lean_verification.log`;
+machine-readable report: `lean_verification.json` in the same directory.
+Compilation used `-DwarningAsError=true`.
 
-Це доказ одного структурного перетворення за умов ненульовості двох
-опорів, з відновленням 10 змінних. Він не доводить фізичних законів BJT,
-переходу 4 → 3, підтримки DAE або коректності всіх гілок генератора Lean.
+That proof covers one structural transformation under nonzero assumptions for
+two resistances, reconstructing 10 variables. It does not establish the physical
+BJT laws, the 4 → 3 step, DAE support, or every branch of the Lean generator.
 
-## Межі реалізації EquiReduce
+## EquiReduce implementation limits
 
-| Можливість | Поточна реалізація | Межа |
+| Capability | Current implementation | Limit |
 |---|---|---|
-| Алгебраїчні залишки у SymPy | Незалежний `System` | Точні дійсні вирази |
-| Афінне виключення | Одиничні й блокові кроки | Умови оборотності явні |
-| Нелінійне ядро | Залишається нерозкритим | Не обіцяє розв'язання |
-| Доказ Lean | Реальні двосторонні компіляції | Документований піднабір SymPy |
-| Координати й пошук | Карти, бюджет, метрики, benchmark | Скінченне оголошене сімейство |
-| Диференціальні рівняння | Експериментальні напівявні ДАЕ | Раціональна реконструкція |
-| Python-пакет | Wheel і sdist | Публічний реліз ще не оформлено |
+| Algebraic SymPy residuals | Independent `System` | Exact real expressions |
+| Affine elimination | Scalar and block steps | Explicit invertibility conditions |
+| Nonlinear core | Remains opaque | No promise of solving it |
+| Lean proof | Actual bidirectional compilations | Documented SymPy subset |
+| Coordinates and search | Charts, budgets, metrics, benchmark | Finite declared family |
+| Differential equations | Experimental semi-explicit DAEs | Rational reconstruction |
+| Python package | Wheel and sdist | Public release metadata is unfinished |
 
-## Перший реліз
+## First release
 
-- Python 3.11+; SymPy як єдина обов'язкова стороння залежність ядра.
-- Скінченні алгебраїчні системи над дійсними числами з точними коефіцієнтами.
-- Умовне афінне виключення зі збереженням області визначення.
-- Незалежна від пошуку перевірка сертифікатів.
-- Необов'язкове встановлення Lean, але обов'язкова справжня компіляція
-  для статусу `verified` у формальному бекенді.
-- Документовані обмеження, відтворювані приклади та тести.
+- Python 3.11+; SymPy is the only required third-party core dependency.
+- Finite algebraic systems over the real numbers with exact coefficients.
+- Conditional affine elimination with preservation of the domain of definition.
+- Certificate verification independent of search.
+- Optional Lean installation, with actual compilation required for formal
+  backend status `verified`.
+- Documented limits, reproducible examples, and tests.
 
-До першого релізу не входять числова інтеграція, пошук робочої точки,
-наближені моделі, автоматична редукція довільних DAE, шумові моделі,
-предметні закони компонентів і вебсервіс.
+The first release excludes numerical integration, operating-point search,
+approximate models, automatic reduction of arbitrary DAEs, noise models,
+application-specific component laws, and a web service.
 
-Підтримка комплексних величин, нерівностей як основних рівнянь,
-розподілів, імпульсів і частинних похідних також не заявляється.
+Support for complex quantities, inequalities as primary equations,
+distributions, impulses, and partial differential equations is also not claimed.

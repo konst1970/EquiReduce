@@ -1,20 +1,20 @@
-# Адаптер Dnipro
+# Dnipro adapter
 
-## Часовий ДАЕ-конвеєр
+## Time-domain DAE pipeline
 
-`dnipro.analysis.from_time_system` приймає часову `ResidualSystem`,
-необов'язкове ручне розбиття на `differential` / `algebraic` та відкритий інтервал.
-`assume_real=True` явно реалізує дійсну область для старих позначень
-Dnipro. Надаються незмінний знімок джерела з метаданими, карта
-позначень та походження рядків.
+`dnipro.analysis.from_time_system` accepts a time-domain `ResidualSystem`,
+an optional manual `differential` / `algebraic` partition, and an open interval.
+`assume_real=True` explicitly chooses a real domain for legacy Dnipro labels.
+It provides an immutable source snapshot with metadata, a symbol map, and
+row provenance.
 
-`adapter.analyze()` викликає структурний аналіз EquiReduce,
-`adapter.reduce()` — неявне алгебраїчне виключення. Похідні зберігаються.
-`adapter.restore_expression` та `restore_reconstruction` повертають
-початкові позначення Dnipro. Контракт і межі символьної перевірки
-описані в [неявному API](implicit_dae.md).
+`adapter.analyze()` calls EquiReduce structural analysis; `adapter.reduce()`
+performs implicit algebraic elimination. Derivatives are retained.
+`adapter.restore_expression` and `restore_reconstruction` return original
+Dnipro labels. The contract and symbolic verification limits are described
+in the [implicit API](implicit_dae.md).
 
-З кореня Dnipro:
+From the Dnipro root:
 
 ```bash
 python -m examples.dae_pipeline rc
@@ -25,36 +25,36 @@ python -m examples.dae_pipeline rl --chart-time --proof require
 python -m examples.dae_inputs --proof require
 ```
 
-Ці приклади не інтегрують систему й не шукають числової робочої точки.
+These examples neither integrate the system nor find a numerical operating point.
 
 `adapter.reduce(auto=True, preferred_differential=(...), max_candidates=32)`
-виконує бюджетний пошук. Якщо розбиття опущено при побудові адаптера,
-початково всі змінні залишаються збереженими. Ручне розбиття, якщо
-задане, повинно містити обидві частини.
+performs budgeted search. If the partition is omitted when creating the
+adapter, all variables are initially retained. A manual partition, when
+specified, must include both parts.
 
-Параметри `initial_time`, `initial_values`, `initial_rates`,
-`parameter_values` приймають початкові позначення Dnipro й точно
-переносяться через `symbol_map`. `initial_check` відрізняє символьні
-зобов'язання від доведеної сумісності в точці, без гарантії існування розв'язку.
+`initial_time`, `initial_values`, `initial_rates`, and `parameter_values`
+accept original Dnipro labels and are transported exactly through `symbol_map`.
+`initial_check` distinguishes symbolic obligations from proved pointwise
+consistency, without guaranteeing existence of a solution.
 
 `adapter.coordinate_transform(variables=..., matrix=..., offset=...)`
-створює часову карту. `adapter.reduce_in_coordinates(chart,
-differential=..., algebraic=...)` повертає реконструкцію початкових
-станів через нові координати. Умова невиродженості діє на всьому
-інтервалі; похідні матриці та зсуву враховуються.
+creates a time-dependent chart. `adapter.reduce_in_coordinates(chart,
+differential=..., algebraic=...)` returns reconstruction of original states
+through new coordinates. Nonsingularity holds throughout the interval;
+matrix and offset derivatives are included.
 
-Для часової ДАЕ `inputs=(u, ...)` явно оголошує зовнішні дійсні
-диференційовні функції. Їхні зразки передаються через
-`initial_input_values={u: ...}` і
-`initial_input_rates={Derivative(u, t): ...}` в оригінальних позначеннях
-Dnipro. Аргументи працюють у ручному/автоматичному виключенні та
-часових координатах. `examples.dae_inputs` будує справжню часову MNA
-від `VoltageSource(source_value=u)`, зберігає $\dot u$ в реконструкції
-й перевіряє весь перехід у Lean із явною регулярністю входу.
+For time-domain DAEs, `inputs=(u, ...)` explicitly declares prescribed real
+differentiable functions. Their samples are passed through
+`initial_input_values={u: ...}` and
+`initial_input_rates={Derivative(u, t): ...}` using original Dnipro labels.
+These arguments work with manual/automatic elimination and time-dependent
+coordinates. `examples.dae_inputs` builds actual time-domain MNA from
+`VoltageSource(source_value=u)`, retains $\dot u$ in reconstruction, and checks
+the entire transition in Lean with explicit input regularity.
 
-## Єдиний API та CLI часового конвеєра
+## Single-call API and time-pipeline CLI
 
-З кореня Dnipro після встановлення обох пакетів:
+From the Dnipro root after installing both packages:
 
 ```python
 from pathlib import Path
@@ -73,15 +73,15 @@ path = pipeline.export(Path("proofs/rc"))
 restored = load_time_artifact(path)
 ```
 
-Вхід — `Circuit`, часова `ResidualSystem`, текст netlist або `Path`
-до файлу. `retain` задає назви функцій, які слід зберегти. Для ручного
-виключення задайте `auto=False`; можна передати явні `differential`
-та `algebraic`. `time` задає дійсний годинник; часові входи прив'язуються
-через `input_sources={"V1": u}` без зміни переданого об'єкта схеми.
-Початкові дані й параметри перевірки передаються через той самий виклик.
-`provenance` зберігає незмінний знімок, карту позначень, імена рядків,
-фізичні умови моделі, вибір гілок та явну політику дійсної області.
-Незалежний EquiReduce може завантажити цей артефакт без імпорту Dnipro.
+Input may be a `Circuit`, time-domain `ResidualSystem`, netlist text, or a
+file `Path`. `retain` specifies function names to keep. For manual elimination,
+set `auto=False`; explicit `differential` and `algebraic` may be supplied.
+`time` specifies a real clock; prescribed inputs are bound through
+`input_sources={"V1": u}` without modifying the supplied circuit object.
+Initial data and verification parameters use the same call.
+`provenance` retains an immutable snapshot, symbol map, row names, physical
+model conditions, branch choices, and explicit real-domain policy.
+Independent EquiReduce can load this artifact without importing Dnipro.
 
 ```bash
 dnipro dae examples/dae_rc.cir --interval -1 1 --retain v_out --assume-real \
@@ -92,18 +92,18 @@ dnipro dae examples/dae_rc.cir --interval -1 1 --retain v_out --assume-real --ou
 dnipro dae examples/dae_rc.cir --interval -1 1 --retain v_out --assume-real --output lean
 ```
 
-`--output lean` генерує доказ; тільки `--proof require` компілює його.
-`verify-dae` завжди повторює символьну перевірку; з `--lean-project`
-виконує нову компіляцію, без нього позначає минулий протокол як `recorded`.
-`--manual`, `--max-candidates` і `--max-minors` керують вибором блоків.
-`--input-source V1=u`, `--initial-time 0`, `--initial v_out=2`,
-`--initial-input u=3`, `--initial-input-rate u=5`,
-`--initial-param R=1` задають точні зразки; останній параметр стосується
-початкової перевірки й не змінює рівняння всієї траєкторії.
-Десяткові літерали й SPICE-суфікси парсяться як точні раціональні числа.
-Числових розв'язувачів чи `--numeric` у команді `dae` немає.
+`--output lean` generates a proof; only `--proof require` compiles it.
+`verify-dae` always repeats symbolic verification; with `--lean-project` it
+performs fresh compilation, otherwise it marks the earlier run report as
+`recorded`. `--manual`, `--max-candidates`, and `--max-minors` control block
+selection. `--input-source V1=u`, `--initial-time 0`, `--initial v_out=2`,
+`--initial-input u=3`, `--initial-input-rate u=5`, and `--initial-param R=1`
+specify exact samples; the last option applies to initial checking and does
+not change equations for the whole trajectory. Decimal literals and SPICE
+suffixes are parsed as exact rational numbers. The `dae` command has no
+numerical solver or `--numeric` option.
 
-## Конкретний зарядовий BJT
+## Concrete charge-based BJT
 
 ```bash
 dnipro dae examples/dae_bjt.cir --interval -1 1 --list-branches
@@ -112,33 +112,32 @@ dnipro dae examples/dae_bjt.cir --interval -1 1 --retain v_b --retain v_c \
   --artifact proofs/bjt
 ```
 
-`--branch POSITION:INDEX` посилається на детермінований список
-`--list-branches`. У Python можна передати `branch_choices` як таку
-мапу індексів або пари `(Piecewise, index)`. Без явного повного вибору
-гілок конвеєр відхиляє `Piecewise`. Вибір діє на всьому інтервалі.
+`--branch POSITION:INDEX` refers to the deterministic `--list-branches` list.
+In Python, `branch_choices` accepts that index map or `(Piecewise, index)`
+pairs. Without an explicit complete branch choice, the pipeline rejects
+`Piecewise`. The choice applies throughout the interval.
 
-`build_equations(..., preserve_charges=True)` зберігає `Derivative(Q,t)`
-для перевірки правила ланцюга. Новий єдиний API вмикає цей режим.
-Стандартний старий режим побудови рівнянь не змінено. Метадані містять
-умови фізичної області BJT, включно з позитивним фактором Ерлі.
-Приклад має точні нормовані параметри, фіксований `VT`, `MJE=MJC=0`,
-нелінійний заряд `TF/TR` та ефект Ерлі. Перевірено обидві полярності
-й обидві гілки. Це не твердження про всі опції BJT: градуйовані переходи
-з нецілими степенями, загальна квазінасиченість і події перемикання
-не входять до заявленого формального профілю.
+`build_equations(..., preserve_charges=True)` retains `Derivative(Q,t)` for
+chain-rule verification. The new single-call API enables this mode.
+The default legacy equation-building mode is unchanged. Metadata includes
+physical BJT domain conditions, including a positive Early factor.
+The example uses exact normalized parameters, fixed `VT`, `MJE=MJC=0`,
+nonlinear `TF/TR` charge, and Early effect. Both polarities and both branches
+have been checked. This does not claim all BJT options: graded junctions with
+noninteger powers, general quasi-saturation, and switching events are outside
+the declared formal profile.
 
-Приймання DN-DAE-10–12: 254 тести бібліотеки, 557 регресій Dnipro
-для аналізу, MNA, parser, export, CLI та circuit, окремий фінальний
-прогін 10 API/CLI-тестів після LaTeX-виправлення. Перевірено самостійний
-wheel без Dnipro, відновлення старих артефактів і конкретного BJT,
-а також нові компіляції RC/BJT через встановлений `verify-dae`.
+DN-DAE-10–12 acceptance: 254 library tests, 557 Dnipro regressions for analysis,
+MNA, parser, export, CLI, and circuit, plus a separate final run of 10 API/CLI
+tests after the LaTeX fix. Checks include a standalone wheel without Dnipro,
+replay of old artifacts and a concrete BJT, and fresh RC/BJT compilations
+through installed `verify-dae`.
 
-## DC та стаціонарна проєкція
+## DC and stationary projection
 
-Адаптер знаходиться у Dnipro:
-`dnipro/analysis/equireduce_adapter.py`. EquiReduce не імпортує Dnipro.
-Dnipro тепер явно залежить від `equireduce==0.1.0.dev0`; обидва локальні
-проєкти встановлюються разом:
+The adapter lives in Dnipro at `dnipro/analysis/equireduce_adapter.py`.
+EquiReduce does not import Dnipro. Dnipro now explicitly depends on
+`equireduce==0.1.0.dev0`; install both local projects together:
 
 ```bash
 python -m pip install -e ./EquiReduce -e .
@@ -152,14 +151,14 @@ result = adapter.reduce()
 original_labels = adapter.restore_reconstruction(result)
 ```
 
-`from_dc_system` приймає лише `domain="dc"`. Невизначені припущення
-Dnipro не стають дійсними мовчки: `assume_real=True` є явним вибором
-дійсної області, а `real_domain_assumed` фіксує його використання.
-Уже недійсні символи відхиляються. Початкові списки та символи не
-змінюються. `symbol_map` показує відповідність позначень; параметри
-визначаються з вільних символів системи й умов.
+`from_dc_system` accepts only `domain="dc"`. Unknown Dnipro assumptions do
+not silently become real: `assume_real=True` explicitly selects the real
+domain, and `real_domain_assumed` records its use. Symbols known to be
+nonreal are rejected. Source lists and symbols are unchanged. `symbol_map`
+shows label correspondence; parameters are inferred from free symbols in
+the system and conditions.
 
-Для часової моделі є окрема операція:
+Time-domain models have a separate operation:
 
 ```python
 from dnipro.analysis.equireduce_adapter import stationary_from_time
@@ -168,27 +167,27 @@ adapter = stationary_from_time(time_system, assume_real=True)
 assert adapter.origin == "stationary"
 ```
 
-Вона зануляє лише оголошені перші похідні станів і будує рівняння
-стаціонарного режиму. Області визначення читаються до занулення:
-у `x′/(x-1)` умова `x != 1` не губиться. Зовнішня часова залежність,
-невідомі та вищі похідні відхиляються. Знакові припущення станів
-зберігаються; уявний стан не перетлумачується як дійсний.
+It zeros only declared first state derivatives and constructs steady-state
+equations. Domains are read before zeroing: `x′/(x-1)` retains `x != 1`.
+External time dependence, unknown derivatives, and higher derivatives are
+rejected. State sign assumptions are retained; imaginary states are not
+reinterpreted as real.
 
-Сертифікат такої проєкції стосується отриманої алгебраїчної системи.
-Для відповідності часових траєкторій використовується окремий
-`DAESystem` із [ДАЕ-контрактом](dae.md).
+The projection certificate applies to the resulting algebraic system.
+Time-trajectory correspondence uses a separate `DAESystem` with the
+[DAE contract](dae.md).
 
-`dnipro.analysis.reduction` став шаром сумісності: збережено DC-домен,
-схему результату, ідентичність старих символів та винятки Dnipro.
-Алгоритми виключення, афінної декомпозиції та перевірки журналу
-делегуються єдиному ядру EquiReduce. Дубльовані алгоритми видалено.
-Для версії розробки міст використовує закріплений приватний формат
-ядра; оновлення версії залежності потребуватиме перевірки сумісності.
+`dnipro.analysis.reduction` is now a compatibility layer: it preserves the DC
+domain, result schema, legacy symbol identity, and Dnipro exceptions.
+Elimination, affine decomposition, and trace verification delegate to the
+shared EquiReduce core. Duplicate algorithms have been removed. For this
+development version, the bridge uses a pinned private core format; dependency
+version updates require compatibility validation.
 
-Старий інтерфейс зберігає історичні символи без мовчазної зміни їх
-ідентичності; новий явний контракт дійсної області доступний через
-`from_dc_system`. Тепер і старий інтерфейс зберігає полюси джерела й
-дозволяє виключити окремий афінний підблок зі збереженням нелінійного
-залишку. Це може дати сильніше скорочення, ніж попередня реалізація.
-Порівняльні регресії охоплюють контракти, сертифікати, пошук,
-координати, метрики, артефакти та сумісність генератора Lean.
+The legacy interface retains historical symbols without silently changing
+their identity; the new explicit real-domain contract is available through
+`from_dc_system`. The legacy interface now also preserves source poles and
+allows elimination of a separate affine subblock while retaining a nonlinear
+residual. This may yield stronger reduction than the previous implementation.
+Comparative regressions cover contracts, certificates, search, coordinates,
+metrics, artifacts, and Lean generator compatibility.

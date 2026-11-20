@@ -1,9 +1,9 @@
-# Довідник реалізованого API
+# Implemented API reference
 
-Сторінка будується з Python-коду `0.1.0.dev0`. Проєктний контракт
-та майбутні доповнення наведені окремо в [описі API](api.md).
+This page is generated from the Python code of `0.1.0.dev0`. The design
+contract and future additions are described separately in the [API guide](api.md).
 
-## Системи й редукція
+## Systems and reduction
 
 ```{autoclass} equireduce.System
 :members: algebraic
@@ -21,7 +21,7 @@
 ```{autoclass} equireduce.ReductionOptions
 ```
 
-## Координати й пошук
+## Coordinates and search
 
 ```{autoclass} equireduce.AffineTransform
 :members: create
@@ -42,7 +42,7 @@
 ```{autoclass} equireduce.search.SearchReport
 ```
 
-## Експериментальні ДАЕ
+## Experimental DAEs
 
 ```{autoclass} equireduce.DAESystem
 :members: semi_explicit, interval_condition
@@ -64,7 +64,7 @@
 ```{autofunction} equireduce.verify_rate_substitution
 ```
 
-## Неявні ДАЕ
+## Implicit DAEs
 
 ```{autoclass} equireduce.SmoothFunction
 :members: function, partials
@@ -126,7 +126,7 @@
 ```{autofunction} equireduce.verify_with_lean
 ```
 
-## Артефакти
+## Artifacts
 
 ```{autofunction} equireduce.export_artifact
 ```

@@ -1,106 +1,105 @@
-# Алгоритми алгебраїчної редукції
+# Algebraic reduction algorithms
 
-## Послідовність обробки
+## Processing sequence
 
-1. Перевірити типи, порядок невідомих, параметри, області й точність чисел.
-2. Зберегти незмінний знімок входу з умовами до перетворень.
-3. Виявити змінні та блоки, за якими залишки афінні.
-4. Побудувати кандидат виключення й усі потрібні умови.
-5. Підставити формули реконструкції, оновити решту рівнянь і журнал кроків.
-6. Незалежно перевірити сертифікат кандидата.
-7. Порівняти допустимі результати за обраною цільовою функцією.
-8. За запитом згенерувати або скомпілювати Lean-доказ.
+1. Validate types, unknown order, parameters, domains, and numeric exactness.
+2. Keep an immutable snapshot of the input and conditions before transformation.
+3. Identify variables and blocks in which the residuals are affine.
+4. Construct an elimination candidate and every required condition.
+5. Substitute reconstruction formulas, updating remaining equations and the step trace.
+6. Independently verify the candidate certificate.
+7. Compare admissible results using the chosen objective.
+8. Generate or compile a Lean proof when requested.
 
-Нормалізація повинна бути консервативною: не розкривати довільно великі
-добутки та не застосовувати перетворення, що потребують незафіксованих
-припущень. Час пошуку та розмір виразів обмежуються бюджетами.
+Normalization must be conservative: avoid expanding arbitrarily large products
+or applying transformations that require unrecorded assumptions. Search time
+and expression sizes are bounded by budgets.
 
-## Одиничний афінний крок
+## Scalar affine step
 
-Рядок має вигляд
+A row has the form
 
 $$a(Z,p)y+b(Z,p)=0.$$
 
-Якщо $a\ne0$, то $y=-b/a$. Коефіцієнти не повинні залежати від $y$;
-цю властивість треба перевіряти, а не припускати на підставі зовнішнього
-вигляду виразу. Формула підставляється в усі залишкові рівняння.
-Кожна раніше виключена змінна врешті має отримати реконструкцію лише
-через кінцеві координати та параметри, без циклічних залежностей.
-Умови попередніх кроків також переносяться через усі наступні
-підстановки. Якщо після реконструкції умова стає хибною, кандидат
-не можна вважати допустимою непорожньою гілкою; якщо її істинність
-невідома, зобов'язання залишається явним.
+When $a\ne0$, $y=-b/a$. The coefficients must be independent of $y$;
+this must be checked rather than inferred from the expression's appearance.
+Substitute the formula into every remaining equation.
+Every previously eliminated variable must eventually have a reconstruction
+using only final coordinates and parameters, without cyclic dependencies.
+Conditions from earlier steps are also transported through all subsequent
+substitutions. If reconstruction makes a condition false, the candidate
+cannot be treated as an admissible nonempty branch. If its truth is unknown,
+the obligation remains explicit.
 
-## Блокове виключення
+## Block elimination
 
-Для вибраних рядків і змінних:
+For selected rows and variables:
 
 $$A(Z,p)Y+b(Z,p)=0,\qquad \det A(Z,p)\ne0.$$
 
-Повертається точний розв'язок блока $Y=\varphi(Z,p)$. Реалізація може
-використовувати точне лінійне розв'язання без явного обчислення оберненої
-матриці. Ненульовість знаменників, породжених алгоритмом, перевіряється
-окремо; символьна оцінка рангу не скасовує потреби в умовах.
+Return the exact block solution $Y=\varphi(Z,p)$. The implementation may use
+exact linear solving without explicitly computing an inverse matrix.
+Nonzero assumptions for denominators introduced by the algorithm are checked
+separately; a symbolic rank estimate does not remove the need for conditions.
 
-Вироджений, прямокутний або невизначений блок не можна обробляти як
-звичайний оборотний квадратний. Перший реліз пропускає такий кандидат
-або обирає сертифікований квадратний підблок. Залишкові рівняння не
-видаляються без доказу їх надлишковості.
+A singular, rectangular, or undetermined block must not be treated as an
+ordinary invertible square block. The first release skips such a candidate
+or selects a certified square subblock. Remaining equations are not removed
+without proof of redundancy.
 
-## Нелінійні функції
+## Nonlinear functions
 
-Експоненти, логарифми та інші нелінійні залежності можуть лишатися в
-залишковому ядрі. Якщо афінний крок правильний для довільної функції
-$f(Z)$, немає потреби доводити її фізичну формулу.
+Exponentials, logarithms, and other nonlinear dependencies can remain in the
+residual core. If an affine step is valid for any function $f(Z)$, its physical
+formula need not be proved.
 
-Однак не можна замінити $f(y)$ новим незалежним символом, виключити $y$
-і втратити залежність функції від $y$. Кожне входження функції після
-реконструкції повинно отримати точну підстановку аргументів.
+However, replacing $f(y)$ with a new independent symbol must not allow $y$
+to be eliminated while losing the function's dependence on $y$. Every function
+occurrence must receive the exact argument substitution after reconstruction.
 
-## Заміна координат
+## Coordinate changes
 
-Початковий підтримуваний клас: $X=M U+c$ із точною оберненою матрицею
-та умовами $\det M\ne0$. Матриця та зсув можуть залежати від параметрів,
-але не від невідомих. Обидва відображення перевіряються окремим
-сертифікатом; це не дозвіл довільно змінювати нелінійні координати.
+The initial supported class is $X=M U+c$ with an exact inverse matrix and
+conditions $\det M\ne0$. The matrix and offset may depend on parameters
+but not unknowns. Both maps are checked by a separate certificate; this
+does not permit arbitrary nonlinear coordinate changes.
 
-Автоматичний пошук починається з тотожного перетворення, перестановок,
-простих цілих лінійних комбінацій і базисів суми-різниці. Ліміт
-коефіцієнтів та число кандидатів є параметрами, а не прихованою евристикою.
+Automatic search starts with the identity, permutations, simple integer linear
+combinations, and sum/difference bases. The coefficient bound and candidate
+count are parameters rather than hidden heuristics.
 
-## Сертифікат і незалежна перевірка
+## Certificate and independent verification
 
-Для кожного кроку зберігаються вихідні рядки, опорні коефіцієнти,
-умови, формула виключення, підстановки та зв'язок із наступною системою.
-Для лінійних комбінацій рядків можуть додатково будуватися матриці
-$Q,T$ з тотожностями $F=QG$, $G=TF$.
-Наявність обох матриць не є універсальною вимогою до довільної
-нелінійної підстановки; загальний контракт задається двостороннім
-твердженням і реконструкцією.
+For each step, record source rows, pivot coefficients, conditions, the
+elimination formula, substitutions, and the link to the next system.
+For linear row combinations, matrices $Q,T$ may additionally be constructed
+with identities $F=QG$, $G=TF$. Requiring both matrices is not universal for
+arbitrary nonlinear substitutions; the general contract is defined by a
+bidirectional statement and reconstruction.
 
-Перевіряльник не повторює вибір найкращого кандидата: він приймає готовий
-сертифікат і звіряє кожен заявлений крок із незмінним входом.
-Непідтверджена тотожність дає `unknown` або `failed`, а не успіх.
+The verifier does not repeat the search for the best candidate: it takes a
+completed certificate and checks every claimed step against the immutable
+input. An unconfirmed identity yields `unknown` or `failed`, not success.
 
-## Критерії оптимізації
+## Optimization criteria
 
-Початкове детерміноване ранжування є лексикографічним:
+The initial deterministic ranking is lexicographic:
 
-1. Менша кількість невідомих.
-2. Менша оцінка складності скороченого якобіана.
-3. Менший розмір дерева та DAG виразів.
-4. Менша кількість нових умов і вартість перетворення координат.
-5. Оцінка складності формального доказу та стабільний порядок кандидата.
+1. Fewer unknowns.
+2. Lower estimated complexity of the reduced Jacobian.
+3. Smaller expression trees and DAGs.
+4. Fewer new conditions and lower coordinate transformation cost.
+5. Estimated formal proof complexity and stable candidate order.
 
-Оцінка числа операцій Lean не є виміряним часом компіляції.
-Порівнювати час можна лише в зафіксованому середовищі з однаковими
-правилами прогріву кешу та повторень. Розширені цільові функції мають
-бути доступні явно, без зміни математичного контракту.
+An estimated Lean operation count is not measured compilation time.
+Timing comparisons require a fixed environment with the same cache warm-up
+and repetition rules. Extended objectives must be explicitly available
+without changing the mathematical contract.
 
-## Зупинка
+## Termination
 
-Результат містить причину завершення: немає підтримуваних кроків,
-досягнуто бюджет, виявлено суперечність або завершено оголошене сімейство
-кандидатів. Відсутність скорочення — коректний результат із тотожною
-реконструкцією. Прапорець `search_complete` стосується лише оголошеного
-скінченного сімейства, а не всіх можливих математичних перетворень.
+The result records the termination reason: no supported steps, budget reached,
+a contradiction found, or completion of the declared candidate family.
+No reduction is a valid result with identity reconstruction.
+`search_complete` applies only to the declared finite family, not to all
+possible mathematical transformations.

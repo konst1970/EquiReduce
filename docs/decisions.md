@@ -1,80 +1,80 @@
-# Архітектурні рішення
+# Architecture decision records
 
-Цей журнал фіксує базові рішення проєкту. Підтверджене користувачем
-найменування відділено від технічних рішень, запропонованих цією
-специфікацією; їх можна переглянути до реалізації з описом наслідків.
+This log records the project's foundational decisions. The user-approved name
+is distinguished from technical decisions proposed by this specification;
+those decisions may be revised before implementation with consequences recorded.
 
-## ADR-001 — назва EquiReduce
+## ADR-001 — the EquiReduce name
 
-**Статус:** погоджено користувачем, 19.11.2026.
+**Status:** approved by the user, 2026-11-19.
 
-Назва походить від скорочення зі збереженням еквівалентності.
-Цільове ім'я Python-імпорту — `equireduce`. Доступність назви на PyPI
-та окремого репозиторію ще не перевірена.
+The name refers to reduction that preserves equivalence. The target Python
+import name is `equireduce`. Availability of the PyPI name and a separate
+repository has not yet been checked.
 
-## ADR-002 — незалежний Python-пакет із SymPy
+## ADR-002 — independent Python package using SymPy
 
-**Статус:** напрям погоджено; технічний контракт визначено документацією.
+**Status:** direction approved; the technical contract is defined by the documentation.
 
-Вхід і вихід — об'єкти SymPy; ядро не імпортує Dnipro. Дані предметної
-області надходять через адаптери. Наслідок: наявний `ResidualSystem`
-потрібно замінити загальним типом, а не переносити без змін.
+Input and output are SymPy objects; the core does not import Dnipro.
+Application data arrives through adapters. Consequence: replace the existing
+`ResidualSystem` with a general type rather than copying it unchanged.
 
-## ADR-003 — спочатку алгебраїка, потім DAE
+## ADR-003 — algebra first, then DAEs
 
-**Статус:** базове технічне рішення цієї специфікації.
+**Status:** foundational technical decision of this specification.
 
-Перший реліз охоплює алгебраїчну редукцію. DAE потребують власних
-теорем про траєкторії, регулярності та початкових умов. Наслідок:
-назва бібліотеки залишається загальною, але підтримка класів заявляється
-поетапно й без перенесення гарантій DC-прикладу на похідні.
+The first release covers algebraic reduction. DAEs need their own trajectory
+theorems, regularity assumptions, and initial conditions. Consequence: the
+library name remains general, while support for classes is declared in stages
+without extending guarantees from a DC example to derivatives.
 
-## ADR-004 — умовна еквівалентність із реконструкцією
+## ADR-004 — conditional equivalence with reconstruction
 
-**Статус:** базове технічне рішення цієї специфікації.
+**Status:** foundational technical decision of this specification.
 
-Кожне виключення повертає реконструкцію й умови. Додаткова умова
-не вважається автоматично доведеною властивістю всіх вихідних розв'язків.
-Наслідок: повнота покриття, повнота пошуку й успіх доказу — різні поля.
+Every elimination returns reconstruction and conditions. An additional condition
+is not automatically a proved property of every source solution. Consequence:
+coverage completeness, search completeness, and proof success are separate fields.
 
-## ADR-005 — Lean як зовнішній перевіряльник
+## ADR-005 — Lean as an external verifier
 
-**Статус:** базове технічне рішення цієї специфікації.
+**Status:** foundational technical decision of this specification.
 
-Lean необов'язковий для встановлення Python-ядра, але статус `verified`
-потребує реального запуску закріпленого середовища. `proof="require"`
-не має мовчазного fallback. Наслідок: окремі інтеграційні тести,
-обробка недоступності й відтворюваний комплект доказу.
+Lean is optional when installing the Python core, but `verified` status requires
+an actual run of the pinned environment. `proof="require"` has no silent
+fallback. Consequence: separate integration tests, unavailability handling,
+and a reproducible proof bundle.
 
-## ADR-006 — сертифікат як дані
+## ADR-006 — certificates as data
 
-**Статус:** базове технічне рішення цієї специфікації.
+**Status:** foundational technical decision of this specification.
 
-Сертифікат зберігає перевірювані математичні кроки; аудит — фактичний
-запуск інструментів. Переносний формат використовує JSON AST із
-дозволеним набором вузлів. Наслідок: хешування не підміняє доказ,
-завантаження артефакту не виконує Python-код.
+The certificate stores checkable mathematical steps; the audit records actual
+tool execution. The portable format uses a JSON AST with an allowed set of
+nodes. Consequence: hashing does not replace proof, and loading an artifact
+does not execute Python code.
 
-## Відкриті рішення
+## Open decisions
 
-До реалізації або випуску потрібно визначити: ліцензію, адресу
-репозиторію, доступність імені дистрибутива, остаточну JSON Schema та
-мінімальний підтримуваний піднабір формального експорту.
-Експериментальний DAE API й Lean-абстракції описані в ADR-007 нижче.
-Ці відкриті питання не є твердженням, що відповідну роботу вже виконано.
+Before implementation or release, determine the license, repository address,
+distribution name availability, final JSON Schema, and minimum supported
+formal export subset. The experimental DAE API and Lean abstractions are
+covered by ADR-007 below. Listing these open questions does not claim that
+the corresponding work has already been completed.
 
-## ADR-007 — вузький перевірений клас ДАЕ
+## ADR-007 — a narrow verified DAE class
 
-**Статус:** реалізовано експериментально.
+**Status:** implemented experimentally.
 
-Перший DAE API — `DAESystem.semi_explicit` з явним відкритим інтервалом,
-диференційовними дійсними траєкторіями й раціональною реконструкцією.
-Початкову пропозицію вимагати та доводити саме клас `C1` звужено до
-точного твердження про `HasDerivAt` у кожній точці. Неперервність
-похідної окремо не заявляється. Це узгоджено з [контрактом](dae.md).
+The first DAE API is `DAESystem.semi_explicit`, with an explicit open interval,
+differentiable real trajectories, and rational reconstruction. The initial
+proposal to require and prove class `C1` was narrowed to the precise statement
+of `HasDerivAt` at every point. Continuity of the derivative is not claimed
+separately. This agrees with the [contract](dae.md).
 
-Такий клас дозволяє довести похідні реконструкції структурно через
-додавання, множення, цілі степені й обернення з явними умовами.
-Негладкі й нераціональні реконструкції відхиляються, замість неявних
-припущень про їх регулярність. Загальні часові карти й високий індекс
-залишаються окремими подальшими задачами.
+This class allows reconstruction derivatives to be proved structurally using
+addition, multiplication, integer powers, and inversion with explicit conditions.
+Nonsmooth and nonrational reconstructions are rejected rather than relying on
+implicit regularity assumptions. General time-dependent charts and high index
+remain separate follow-up tasks.

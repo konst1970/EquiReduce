@@ -1,20 +1,20 @@
-# Документація EquiReduce
+# EquiReduce documentation
 
-**EquiReduce** — незалежна Python-бібліотека для точної редукції
-систем рівнянь у SymPy та формальної перевірки еквівалентності в Lean 4.
+**EquiReduce** is an independent Python library for exact reduction of SymPy
+equation systems and formal equivalence verification in Lean 4.
 
-Доступна версія розробки `0.1.0.dev0`: алгебраїчна редукція, координатні
-карти, обмежений пошук, напівявні й неявні ДАЕ з доказами траєкторій. Поточні перевірки й
-незавершені задачі наведено у [звіті виконання](progress.md).
-Для використання почніть із [практичної інструкції](quickstart.md).
+Development version `0.1.0.dev0` provides algebraic reduction, coordinate charts,
+bounded search, and semi-explicit and implicit DAEs with trajectory proofs.
+Current validation results and unfinished work are listed in the
+[progress report](progress.md). Start with the [practical guide](quickstart.md).
 
-Рекомендований порядок читання: призначення → математичний контракт →
-алгоритми → API → Lean → тестування → план реалізації. Для роботи з
-похідними додатково обов'язковий розділ про DAE.
+Recommended reading order: purpose → mathematical contract → algorithms →
+API → Lean → testing → implementation plan. For derivatives, also read
+the DAE section.
 
 ```{toctree}
 :maxdepth: 2
-:caption: Специфікація та розробка
+:caption: Specification and development
 
 overview
 quickstart

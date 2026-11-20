@@ -1,10 +1,10 @@
-# Неявні ДАЕ: етапи DN-DAE-01–12
+# Implicit DAEs: stages DN-DAE-01–12
 
-Цей API приймає загальні залишки першого порядку й зберігає неявну
-динаміку. Це окремий конвеєр від `DAESystem.semi_explicit`, із власною
-повною Lean-теоремою переходу від початкових MNA-рядків до кінцевої ДАЕ.
+This API accepts general first-order residuals and preserves implicit dynamics.
+It is separate from `DAESystem.semi_explicit`, with its own complete Lean
+theorem connecting source MNA rows to the final DAE.
 
-## Контракт
+## Contract
 
 ```python
 import sympy as sp
@@ -27,106 +27,104 @@ assert result.coverage == "complete"
 assert not result.conditions
 ```
 
-`unknowns` зберігає порядок вихідних змінних. `differential` та
-`algebraic` мають бути неперетинним повним розбиттям `unknowns`.
-Це запит на виключення, а не автоматичний доказ незалежності станів
-або індексу ДАЕ. Порожня частина розбиття допустима.
+`unknowns` preserves source variable order. `differential` and `algebraic`
+must be disjoint and together partition `unknowns`. This is an elimination
+request, not an automatic proof of state independence or DAE index.
+Either partition part may be empty.
 
-Стани й `inputs` — явно дійсні функції оголошеного часу. Параметри —
-окремі дійсні сталі символи. Вхід `u(t)` треба оголосити в `inputs`;
-він та його перша похідна не стають сталими параметрами.
-Початково підтримано диференційовні траєкторії на відкритому інтервалі
-зі скінченними точними кінцями. `interval_condition` повертає умову
-непорожності, якщо кінці символьні.
+States and `inputs` are explicitly real functions of the declared time.
+Parameters are separate real constant symbols. Declare an input `u(t)` in
+`inputs`; neither it nor its first derivative becomes a constant parameter.
+The initial contract supports differentiable trajectories on an open interval
+with finite exact endpoints. `interval_condition` returns a nonemptiness
+condition when the endpoints are symbolic.
 
-Рядки не парсяться як вирази. `Float`, похідні вищих порядків,
-похідні за сторонньою змінною й негладкі оператори отримують явну
-помилку. Для `Piecewise` потрібен явний вибір гладкої гілки.
-Знаки станів і області часткових операцій
-зберігаються до підстановок та можливих скорочень.
+Strings are not parsed as expressions. `Float`, higher derivatives,
+derivatives with respect to another variable, and nonsmooth operators produce
+explicit errors. `Piecewise` requires an explicit smooth branch choice.
+State signs and partial-operation domains are preserved before substitutions
+and possible cancellations.
 
-## Структура й ранг
+## Structure and rank
 
-`analyze_implicit_dae(source)` нормалізує перші похідні
-складених виразів підтриманого гладкого класу, будує $E=\partial F/\partial\dot X$ та перевіряє
-саму тотожність $F=E\dot X+h$. Коефіцієнти $E$ і $h$ не можуть
-залежати від швидкостей невідомих. Наприклад, $\dot x^2$ не є афінним
-лише через можливість обчислити його Якобіан.
+`analyze_implicit_dae(source)` normalizes first derivatives of composite
+expressions in the supported smooth class, constructs
+$E=\partial F/\partial\dot X$, and checks the identity $F=E\dot X+h$ itself.
+Coefficients in $E$ and $h$ cannot depend on unknown-state rates.
+For example, $\dot x^2$ is not affine merely because its Jacobian can be computed.
 
-Результат містить початкову систему, нормалізовані залишки, журнал
-розкриття похідних, незмінну матрицю мас, зсув і звіт про ранг.
-`verify_implicit_structure` переобчислює й перевіряє ці дані.
+The result includes the source system, normalized residuals, derivative expansion
+trace, immutable mass matrix, offset, and rank report.
+`verify_implicit_structure` recomputes and checks these fields.
 
-Ранг визначається точними мінорами з детермінованим бюджетом
-`max_minors` (типово 64):
+Rank is determined by exact minors with a deterministic `max_minors` budget
+(default 64):
 
-| Статус | Значення |
+| Status | Meaning |
 |---|---|
-| `exact` | Нижня та верхня межі збіглися за вхідної області |
-| `conditional` | Ранг доведений за явно поверненої додаткової умови на мінор |
-| `unknown` | Залишилися лише межі; невизначені функції чи бюджет не дали довести точний ранг |
+| `exact` | Lower and upper bounds agree under the input domain |
+| `conditional` | Rank is proved under an explicitly returned additional minor condition |
+| `unknown` | Only bounds remain; undefined functions or the budget prevented an exact rank proof |
 
-Графове зіставлення дає тільки структурну верхню межу. Звіт також
-містить визначник-свідок, індекси мінору, число перевірок і ознаку
-вичерпання бюджету. Жоден числовий ранг або випадкове випробування
-параметрів не використовується. Умови діагностичного рангу не
-додаються автоматично до області редукованої ДАЕ.
+Graph matching supplies only a structural upper bound. The report also contains
+a witness determinant, minor indices, evaluation count, and a budget-exhaustion
+flag. No numerical rank or random parameter testing is used. Diagnostic rank
+conditions are not automatically added to the reduced DAE's domain.
 
-## Алгебраїчне виключення
+## Algebraic elimination
 
-Для першого класу алгебраїчний блок має бути доступний у рядках без
-похідних після нормалізації. Конвеєр використовує спільний афінний
-редуктор EquiReduce; власної копії математичного алгоритму у Dnipro немає.
-Весь запитаний алгебраїчний набір має бути виключений. Добування нових
-алгебраїчних обмежень через диференціювання чи комбінації динамічних
-рядків не виконується цим першим класом.
+For the initial class, the algebraic block must be available in derivative-free
+rows after normalization. The pipeline uses EquiReduce's shared affine reducer;
+Dnipro has no separate copy of the mathematical algorithm. The entire requested
+algebraic set must be eliminated. This first class does not derive new algebraic
+constraints by differentiation or combinations of dynamic rows.
 
-Реконструкція $y=\varphi(t,x,p,u)$ складається з раціональних операцій,
-`exp` та оголошених гладких законів і не залежить від швидкостей. Обчислюється
-$\dot y=\varphi_t+\varphi_x\dot x+\varphi_u\dot u$, після чого
-перетворюються всі початкові рядки й області. Додаткові алгебраїчні
-обмеження зберігаються. Видаляються тільки точно нульові образи рядків.
-`residual_source_indices` пов'язує кожен кінцевий рядок із його джерелом.
+Reconstruction $y=\varphi(t,x,p,u)$ uses rational operations, `exp`, and declared
+smooth laws and is independent of rates. It computes
+$\dot y=\varphi_t+\varphi_x\dot x+\varphi_u\dot u$, then transforms all
+source rows and domains. Additional algebraic constraints are retained.
+Only exactly zero row images are removed. `residual_source_indices` links each
+final row to its source.
 
-Масова матриця не обертається. Наприклад, із
-$C\dot v+(v-U_0)/R=0$ не виникає нова умова $C\ne0$.
-При $C=0$ залишається алгебраїчний випадок; він не оголошується ОДЕ.
-`form="implicit"` та `index_status="not_classified"` описують результат.
+The mass matrix is not inverted. For example,
+$C\dot v+(v-U_0)/R=0$ introduces no new condition $C\ne0$.
+When $C=0$, the algebraic case remains; it is not declared an ODE.
+`form="implicit"` and `index_status="not_classified"` describe the result.
 
-Непідтримувані функції, невиключений алгебраїчний блок та нелінійність
-за швидкостями станів поки відхиляються. Зовнішні входи та їх перші
-похідні зберігаються як у динамічних рядках, так і в реконструкції.
-Підтримані зарядові профілі BJT наведено нижче.
+Unsupported functions, an uneliminated algebraic block, and nonlinear dependence
+on state rates are currently rejected. Prescribed inputs and their first
+derivatives are retained in both dynamic rows and reconstruction.
+Supported BJT charge profiles are described below.
 
-## Сертифікат і Lean
+## Certificate and Lean
 
-`verify_implicit_certificate(source, result.certificate)` перевіряє:
+`verify_implicit_certificate(source, result.certificate)` checks:
 
-1. Знімок джерела й нормалізацію похідних.
-2. Вибрані вихідні алгебраїчні рядки та їх область.
-3. Журнал афінного виключення без повторного пошуку.
-4. Реконструкцію, її похідні, усі залишки та їх вихідні індекси.
-5. Збереження початкових і доданих умов.
+1. The source snapshot and derivative normalization.
+2. Selected source algebraic rows and their domain.
+3. The affine elimination trace without repeating search.
+4. Reconstruction, its derivatives, all residuals, and their source indices.
+5. Preservation of input and added conditions.
 
-`formal_check` за замовчуванням має статус `not_requested`.
-`proof="generate"` генерує теорему, `proof="require"` запускає справжній
-Lean із `LeanConfig(project_dir)`. Непідтримувана мова дає `unsupported`,
-а незавершений обов'язковий доказ — `ProofVerificationError`.
+`formal_check` defaults to `not_requested`. `proof="generate"` generates the
+theorem; `proof="require"` runs actual Lean using `LeanConfig(project_dir)`.
+An unsupported expression language yields `unsupported`; an incomplete
+required proof raises `ProofVerificationError`.
 
-`reduction_equivalence` доводить обидва напрямки між оригінальними
-рядками з областями та скороченою системою з графом реконструкції
-для диференційовних траєкторій на відкритому інтервалі. Умови кінцевої
-області припускаються на всьому інтервалі. Похідні в Lean справжні:
-`HasDerivAt`, `deriv`, правило ланцюга та рівність в околі точки.
-Початкові раціональні рядки друкуються зі збереженням їх структури,
-тому зниклий після скорочення полюс не губиться в початковій теоремі.
-Перевіряються аксіоми кінцевої складеної теореми.
+`reduction_equivalence` proves both directions between original rows with
+their domains and the reduced system with the reconstruction graph for
+differentiable trajectories on an open interval. Final domain conditions are
+assumed throughout the interval. Lean derivatives are actual derivatives:
+`HasDerivAt`, `deriv`, the chain rule, and equality near a point.
+Source rational rows are printed with their structure preserved, so a pole
+removed by cancellation is not lost from the source theorem.
+The final composed theorem's axioms are audited.
 
-Цей бекенд поки відхиляє ненульовий статичний опорний рядок,
-який став статичним лише після розкриття похідної. Регулярність `C1`,
-існування/єдиність розв'язків і загальне зниження індексу не заявляються.
+This backend currently rejects a nonzero static pivot row that became static
+only after derivative expansion. `C1` regularity, solution existence/uniqueness,
+and general index reduction are not claimed.
 
-## Початкові дані
+## Initial data
 
 ```python
 checked = reduce_implicit_dae(
@@ -135,30 +133,30 @@ checked = reduce_implicit_dae(
 assert checked.initial_check.status == "verified"
 ```
 
-Потрібні всі збережені стани; виключені значення можуть бути
-реконструйовані. Задані значення й швидкості ніколи не виправляються.
-`initial_rates` використовує ключі `Derivative(state, time)`.
-Циклічні присвоєння параметрів, неточні числа й точка на межі інтервалу
-відхиляються. Параметри точно підставляються також у початковий час.
+Every retained state is required; eliminated values can be reconstructed.
+Supplied values and rates are never corrected. `initial_rates` uses
+`Derivative(state, time)` keys. Cyclic parameter assignments, inexact numbers,
+and points on the interval boundary are rejected. Parameters are also
+substituted exactly into the initial time.
 
-`initial_check` повертає `verified` або `conditional`, а доведену
-несумісність відхиляє через `InvalidSystemError`. `obligations` містить
-символьні умови, `rate_equations` / `rate_conditions` — зобов'язання
-для існування пропущених швидкостей. `rate_witness` містить доведений
-точний свідок, якщо його побудовано без нових припущень. Нове $C\ne0$
-або $L\ne0$ заради обчислення швидкості не припускається.
+`initial_check` returns `verified` or `conditional`, rejecting proved
+inconsistency with `InvalidSystemError`. `obligations` contains symbolic
+conditions; `rate_equations` / `rate_conditions` contain obligations for
+existence of missing rates. `rate_witness` contains a proved exact witness
+when one was constructed without new assumptions. No new $C\ne0$ or $L\ne0$
+is assumed merely to compute a rate.
 
-Область перевірки — `pointwise_residuals_and_reconstruction`,
-`trajectory_existence="not_asserted"`. Це не гарантія існування траєкторії
-і не повний пошук прихованих зв'язків високого індексу.
+The check scope is `pointwise_residuals_and_reconstruction`, with
+`trajectory_existence="not_asserted"`. It does not guarantee trajectory
+existence or fully search for hidden higher-index constraints.
 
-## Зовнішні часові входи
+## Prescribed time-dependent inputs
 
-Оголошення `inputs=(u, ...)` означає, що кожна функція входу задана
-ззовні та диференційовна на всьому відкритому інтервалі системи.
-`source.input_regularity` повертає пари функція/припущення.
-Входи не стають сталими параметрами або шуканими траєкторіями.
-Обидва напрямки відповідності використовують той самий заданий вхід.
+Declaring `inputs=(u, ...)` means each input function is externally prescribed
+and differentiable throughout the system's open interval.
+`source.input_regularity` returns function/assumption pairs. Inputs become
+neither constant parameters nor unknown trajectories. Both correspondence
+directions use the same prescribed input.
 
 ```python
 u = sp.Function("input", real=True)(t)
@@ -177,41 +175,40 @@ assert driven_result.initial_check.status == "verified"
 assert dict(driven_result.initial_check.values)[y] == 18
 ```
 
-Для цього прикладу
+For this example,
 
 $$\dot y=u^2\dot x+2xu\dot u,$$
 $$ (1+u^2)\dot x+2xu\dot u+xu^2=0.$$
 
-`required_input_rates` містить потрібні перші похідні в порядку
-оголошених входів, включно з початковими нормалізованими рядками й
-умовами. Правило ланцюга враховує всі входи й області знаменників.
+`required_input_rates` contains required first derivatives in declared input
+order, including source normalized rows and conditions. The chain rule
+accounts for every input and denominator domain.
 
-У Lean входи друкуються як окремі функції `ℝ → ℝ`, а `hInputRegularity`
-припускає `DifferentiableAt` кожної з них у кожній точці інтервалу.
-Для правила ланцюга використовується їхній справжній `deriv` та
-`HasDerivAt`. Припущення входить і до повної теореми часової карти.
-Занулення $\dot u$ відхиляється kernel-тестом.
+In Lean, inputs are separate `ℝ → ℝ` functions; `hInputRegularity` assumes
+`DifferentiableAt` for each at every interval point. The chain rule uses their
+actual `deriv` and `HasDerivAt`. The assumption also appears in the complete
+time-chart theorem. A kernel test rejects zeroing $\dot u$.
 
-Початкові ключі `initial_input_values` — оголошені функції, ключі
-`initial_input_rates` — їх перші похідні. Задані зразки не змінюються.
-Пропущені значення всіх оголошених входів та потрібних похідних
-отримують свіжі дійсні символи: `initial_check.input_values`,
-`input_rates`, `input_unknowns`. Статус тоді `conditional`.
-Ці символи відокремлені від екзистенційних пропущених швидкостей станів:
-перевірка не підбирає зовнішній сигнал для задоволення рівнянь.
-Знакові умови, полюси й точність входів перевіряються з іншими даними.
+`initial_input_values` keys are declared functions; `initial_input_rates`
+keys are their first derivatives. Supplied samples are unchanged.
+Missing values for every declared input and required derivative receive fresh
+real symbols in `initial_check.input_values`, `input_rates`, and
+`input_unknowns`. Status is then `conditional`. These symbols are separate
+from existential missing state rates: the check does not choose an external
+signal to satisfy the equations. Input sign conditions, poles, and exactness
+are checked together with the other data.
 
-Ті самі аргументи доступні у `search_implicit_partitions`,
-`reduce_implicit_in_coordinates` і методах адаптера Dnipro.
-Реконструкція з $\dot u$ поки не допускається, оскільки її
-диференціювання могло б породити $\ddot u$.
+The same arguments are available in `search_implicit_partitions`,
+`reduce_implicit_in_coordinates`, and the Dnipro adapter methods.
+Reconstruction involving $\dot u$ is currently forbidden because its
+differentiation could introduce $\ddot u$.
 
-Формальне твердження умовне щодо заданої диференційовності. Воно не
-доводить гладкість конкретної нераціональної формули сигналу чи
-коректність переходу через стрибок. `Piecewise`, PWL/PULSE на точках
-перемикання та негладкі оператори залишаються поза цим контрактом.
+The formal statement is conditional on the specified differentiability.
+It does not prove smoothness of a particular nonrational signal formula or
+correctness across a jump. `Piecewise`, PWL/PULSE at switching points, and
+nonsmooth operators remain outside this input contract.
 
-## Автоматичне розбиття
+## Automatic partitioning
 
 ```python
 from equireduce import search_implicit_partitions
@@ -222,16 +219,16 @@ best = search_implicit_partitions(
 assert best.search.candidates_evaluated <= 32
 ```
 
-Пошук розглядає детерміновану скінченну сім'ю розбиттів за входженням
-станів у рядки без похідних. Перший кандидат нічого не виключає;
-далі йдуть найбільші блоки. Кожен успішний кандидат має перевірений
-сертифікат. Оцінка мінімізує кількість станів, додаткових умов і операцій.
-`preferred_differential` залишає зазначені стани в усіх кандидатах.
-`result.source` містить вибране розбиття; `result.search.source` —
-початкове джерело. `complete` означає вичерпання лише заявленої сім'ї,
-не глобальний мінімум і не незалежність фізичних станів.
+Search considers a deterministic finite family of partitions based on state
+occurrence in derivative-free rows. The first candidate eliminates nothing;
+the largest blocks follow. Every successful candidate has a verified
+certificate. The score minimizes state count, additional conditions, and
+operations. `preferred_differential` retains specified states in every candidate.
+`result.source` contains the selected partition; `result.search.source`
+contains the initial source. `complete` means exhaustion of the declared
+family, not a global minimum or independence of physical states.
 
-## Часові координати
+## Time-dependent coordinates
 
 ```python
 from equireduce import TimeAffineTransform, reduce_implicit_in_coordinates
@@ -245,23 +242,22 @@ mapped = reduce_implicit_in_coordinates(
 )
 ```
 
-Підтримані оборотні квадратні карти $X=M(t,p)U+c(t,p)$ з раціональними
-коефіцієнтами. Зберігаються пряма й обернена карти, обидві карти
-швидкостей та області; враховано $M\dot U+\dot M U+\dot c$.
-Нові координати — свіжі необмежені дійсні функції часу.
-Умова визначника діє на всьому інтервалі.
+Invertible square charts $X=M(t,p)U+c(t,p)$ with rational coefficients are
+supported. Forward and inverse maps, both rate maps, and domains are retained;
+$M\dot U+\dot M U+\dot c$ is included. New coordinates are fresh unrestricted
+real time functions. The determinant condition holds throughout the interval.
 
-`verify_time_transform` перевіряє саму карту;
-`verify_implicit_coordinate_certificate` — її композицію з виключенням.
-Формальна теорема екзистенційно будує нові траєкторії через обернену
-карту, доводить їх диференційовність та обидва напрямки від початкових
-рядків. Її гіпотеза області — кінцеві умови, перенесені оберненою картою.
-Початкові значення можна задавати в збережених нових координатах або
-для всіх оригінальних станів; суперечливі одночасні значення відхиляються.
-`certificate.inner` зберігає розширену систему з координатними рядками;
-`residual_source_indices` індексує її рядки, а не лише оригінальні.
+`verify_time_transform` checks the chart itself;
+`verify_implicit_coordinate_certificate` checks composition with elimination.
+The formal theorem existentially constructs new trajectories through the
+inverse chart, proves their differentiability, and both directions from source
+rows. Its domain hypothesis consists of final conditions transported by the
+inverse chart. Initial values may be supplied in retained new coordinates or
+for all original states; contradictory simultaneous values are rejected.
+`certificate.inner` retains the augmented system with coordinate rows;
+`residual_source_indices` indexes its rows, not only the original ones.
 
-## Гладкі зарядові закони та гілки
+## Smooth charge laws and branches
 
 ```python
 from equireduce import SmoothFunction
@@ -270,58 +266,56 @@ Qbe = SmoothFunction("Qbe", 2)
 # Qbe.function(vbe, vbc), Qbe.partials[0](vbe, vbc), Qbe.partials[1](vbe, vbc)
 ```
 
-Оголошення одно- або двозмінного закону задає функцію та імена її
-частинних похідних. У SymPy похідні зберігаються як оголошені функції
-`Qbe__d0`, `Qbe__d1`. У Lean гіпотеза `hSmooth` задає справжній
-`HasDerivAt` або спільний `HasFDerivAt` із відповідним градієнтом
-у кожній точці. Для двозмінного випадку доводиться композиція з парою
-траєкторій через `HasDerivAt.prodMk` та `comp_hasDerivAt`.
-Припущення про похідні є частиною контракту, а не аксіомою тотожності
-кінцевої та початкової систем. Це структурний результат для законів,
-які задовольняють оголошену глобальну диференційовність.
+A one- or two-variable law declaration defines a function and names for its
+partial derivatives. SymPy retains the derivatives as declared functions
+`Qbe__d0`, `Qbe__d1`. In Lean, `hSmooth` specifies an actual `HasDerivAt` or
+joint `HasFDerivAt` with the corresponding gradient at every point.
+The two-variable case proves composition with a pair of trajectories using
+`HasDerivAt.prodMk` and `comp_hasDerivAt`. Derivative assumptions are part
+of the contract, not an axiom asserting equivalence of the final and source
+systems. This is a structural result for laws satisfying the declared global
+differentiability.
 
-Передайте оголошення в `smooth_functions=(Qbe, ...)` при створенні
-`ImplicitDAESystem`. Підтримані вкладені композиції, добутки й частки.
-Реконструкція та зарядова нормалізація зберігають усі частинні похідні,
-включно зі змішаною залежністю заряду BE від напруги BC.
-Для конкретного `exp` використовуються доведені теореми Mathlib,
-без `hSmooth` для цієї функції.
+Pass declarations as `smooth_functions=(Qbe, ...)` when creating
+`ImplicitDAESystem`. Nested compositions, products, and quotients are supported.
+Reconstruction and charge normalization preserve every partial derivative,
+including mixed dependence of BE charge on BC voltage. Concrete `exp` uses
+proved Mathlib theorems without `hSmooth` for that function.
 
-`branch_choices=((piecewise_expression, branch_index), ...)` вибирає
-рівно одну гілку кожного вузла `Piecewise`. Порядок гілок враховується;
-доповнення попередніх умов посилюються до строгих нерівностей.
-Область вибраної гілки входить до початкової системи на всьому інтервалі.
-Сирий `Piecewise` та зарядова `Derivative` залишаються у джерелі й
-Lean-твердженні. Похідна вибраної гладкої формули переноситься на
-початкову функцію через рівність в околі точки, а не підстановку лише
-в окремій точці. Межі, стрибки та переходи між гілками не охоплено.
-`coverage="complete"` тут означає повноту всередині оголошеної області.
+`branch_choices=((piecewise_expression, branch_index), ...)` selects exactly
+one branch of every `Piecewise` node. Branch order is respected; complements
+of preceding conditions are strengthened to strict inequalities.
+The selected branch's region enters the source system throughout the interval.
+Raw `Piecewise` and charge `Derivative` remain in the source and Lean statement.
+The selected smooth formula's derivative transfers to the source function by
+equality near a point, not substitution at only one point. Boundaries, jumps,
+and transitions between branches are not covered. Here, `coverage="complete"`
+means completeness within the declared region.
 
-Конкретно перевірено NPN і PNP Dnipro з фіксованим `VT`, `MJE=MJC=0`,
-нульовими додатковими опціями та ненульовими `CJE/CJC`, `TF/TR` і
-ефектом Ерлі. Обидві гілки форвардного зберігання мають власну область
-та справжній Lean-доказ початкової зарядової MNA. Струмові й зарядові
-формули не змінено. Профіль містить нелінійний експоненційний заряд
-і змішані похідні через базовий заряд. Окремо доведено
-$Q_c+Q_b+Q_e=0$ та баланс їх часових похідних.
+Concrete Dnipro NPN and PNP tests use fixed `VT`, `MJE=MJC=0`, zero additional
+options, and nonzero `CJE/CJC`, `TF/TR`, and Early effect. Both forward-storage
+branches have their own domains and actual Lean proofs of the source charge
+MNA. Current and charge formulas are unchanged. The profile contains nonlinear
+exponential charge and mixed derivatives through base charge. Separately,
+$Q_c+Q_b+Q_e=0$ and the balance of their time derivatives are proved.
 
-Це не підтримка всіх параметрів BJT. Динамічні нецілі степені
-градуйованих переходів (`MJE/MJC ≠ 0`), корені, неоголошені спеціальні
-функції, перемикання гілок і загальне обернення $Q(V)$ поки отримують
-явну діагностику. Введення заряду не є доказом його незалежності
-чи дозволом обернути нелінійний закон.
+This does not support every BJT parameter. Dynamic noninteger powers in graded
+junctions (`MJE/MJC ≠ 0`), roots, undeclared special functions, branch switching,
+and general inversion of $Q(V)$ currently receive explicit diagnostics.
+Introducing charge does not prove its independence or authorize inversion
+of a nonlinear law.
 
-## Переносний результат
+## Portable result
 
-`export_artifact(result, path)` і `load_artifact(path)` підтримують
-ручну редукцію, часові карти, входи, гладкі закони, гілки, початкові
-дані й звіт пошуку. Простір схеми — `equireduce.implicit/v1`, машинний
-опис — `artifact-implicit-v1.schema.json`. Старий алгебраїчний/напівявний
-формат залишається окремим. Завантаження відтворює математичні поля
-з перевіреного сертифіката без повторного виключення; звіт пошуку
-окремо звіряється повторенням лише його оголошених кандидатів.
+`export_artifact(result, path)` and `load_artifact(path)` support manual
+reduction, time charts, inputs, smooth laws, branches, initial data, and search
+reports. The schema namespace is `equireduce.implicit/v1`, with machine-readable
+description `artifact-implicit-v1.schema.json`. The old algebraic/semi-explicit
+format remains separate. Loading rebuilds mathematical fields from a checked
+certificate without repeating elimination; the search report is separately
+checked by replaying only its declared candidates.
 
-`formal_check.origin="recorded"` позначає історичний протокол.
-Для нової компіляції викличте `verify_with_lean` або Dnipro `verify-dae`.
-Збережений код не виконується під час завантаження; він також має
-точно збігатися з заново згенерованим кодом сертифіката.
+`formal_check.origin="recorded"` identifies a historical run report.
+For fresh compilation, call `verify_with_lean` or Dnipro `verify-dae`.
+Stored code is not executed on loading; it must also match the code freshly
+generated from the certificate exactly.

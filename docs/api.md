@@ -1,12 +1,12 @@
-# Python API: реалізація та наступні розширення
+# Python API: implementation and future extensions
 
-Алгебраїчні `System`, `reduce_system`, перевірка сертифіката, режими
-Lean та операції артефактів реалізовані у `0.1.0.dev0`.
-Точні сигнатури наведені в [автоматичному довіднику](reference.md).
-Координати й пошук описані [окремо](coordinates.md), експериментальний
-DAE API — у [контракті ДАЕ](dae.md).
+Algebraic `System`, `reduce_system`, certificate verification, Lean modes,
+and artifact operations are implemented in `0.1.0.dev0`.
+Exact signatures appear in the [generated reference](reference.md).
+Coordinates and search are described [separately](coordinates.md), and the
+experimental DAE API in the [DAE contract](dae.md).
 
-## Створення алгебраїчної системи
+## Creating an algebraic system
 
 ```python
 import sympy as sp
@@ -22,26 +22,25 @@ system = System.algebraic(
 )
 ```
 
-`residuals` — вирази `Expr`, кожен дорівнює нулю. Вхідними рядками
-та `Eq` перший API не оперує: це запобігає неоднозначності між
-залишком, рівністю й уже обчисленим Boolean. `Matrix` може бути
-нормалізована в упорядкований кортеж скалярних залишків.
+`residuals` are `Expr` objects, each set equal to zero. The initial API does
+not accept strings or `Eq`: this avoids ambiguity between a residual, an
+equality, and an already evaluated Boolean. A `Matrix` can be normalized
+into an ordered tuple of scalar residuals.
 
-`unknowns` містить різні дійсні `Symbol`; порядок зберігається.
-`parameters` задає інші вільні символи явно й не перетинається з
-невідомими. У прикладах слід використовувати `real=True`; невизначені
-або несумісні припущення не перетлумачуються мовчки.
-`conditions` — предикати SymPy. Дозволені порожні кортежі.
-Знакові припущення символів і невизначених функцій включаються до
-області. Дискретні припущення, наприклад `integer=True`, не підтримуються.
-Для явного перетворення десяткових коефіцієнтів фабрика має параметр
-`float_policy="exact_decimal"`; після цього числа у системі вже точні.
+`unknowns` contains distinct real `Symbol` objects, preserving order.
+`parameters` explicitly declares other free symbols and is disjoint from the
+unknowns. Examples should use `real=True`; unknown or incompatible assumptions
+are not silently reinterpreted. `conditions` contains SymPy predicates.
+Empty tuples are allowed. Sign assumptions on symbols and undefined functions
+are included in the domain. Discrete assumptions such as `integer=True` are
+unsupported. For explicit conversion of decimal coefficients, the factory has
+`float_policy="exact_decimal"`; numbers in the resulting system are exact.
 
-Приховані вільні символи, `Derivative` у алгебраїчному домені,
-неприпустимі числа та повторювані невідомі викликають помилку валідації.
-Порожня система допустима й означає відсутність обмежень у заданій області.
+Hidden free symbols, `Derivative` in the algebraic domain, invalid numbers,
+and repeated unknowns cause validation errors. An empty system is valid and
+means no constraints within the specified domain.
 
-## Основна операція
+## Main operation
 
 ```python
 def reduce_system(
@@ -55,18 +54,19 @@ def reduce_system(
     ...
 ```
 
-- `candidates`: явно дозволені для виключення невідомі; `None` дозволяє
-  розглядати всі. Порядок — побажання пошуку, не дозвіл на некоректний крок.
-- `options`: незмінний `ReductionOptions` із бюджетами й критерієм вибору.
-- `proof`: `"none"`, `"generate"` або `"require"`.
-- `lean`: `LeanConfig` із робочим каталогом закріпленого Lake-проєкту,
-  командою як кортежем аргументів і тайм-аутом.
+- `candidates`: unknowns explicitly eligible for elimination; `None` permits
+  considering all of them. Order is a search preference, not permission for
+  an invalid step.
+- `options`: immutable `ReductionOptions` with budgets and a selection criterion.
+- `proof`: `"none"`, `"generate"`, or `"require"`.
+- `lean`: `LeanConfig` with the pinned Lake project's working directory,
+  a command tuple, and a timeout.
 
-`coordinate_search=True` запускає пошук скінченного сімейства карт.
-`max_candidates` обмежує число перевірених карт; `coefficient_bound`
-задає межу цілих коефіцієнтів зсувів координат. `allow_blocks=False` обмежує виключення
-одиничними кроками. Політика десяткових чисел застосовується під час
-створення `System`, а не після втрати точності у вхідних даних.
+`coordinate_search=True` searches a finite family of charts.
+`max_candidates` bounds evaluated charts; `coefficient_bound` bounds integer
+coordinate shear coefficients. `allow_blocks=False` restricts elimination to
+scalar steps. The decimal policy applies when creating `System`, not after
+input precision has already been lost.
 
 ```python
 from equireduce import LeanConfig, ReductionOptions, reduce_system
@@ -91,64 +91,64 @@ result = reduce_system(
 )
 ```
 
-`project_dir` — явний каталог, а не неявне оточення поточного процесу.
-Команда не передається оболонці. Параметри повинні мати перевірювані
-обмеження, наприклад додатні цілі бюджети та додатний тайм-аут.
+`project_dir` is explicit rather than inferred from the current process.
+The command is not passed to a shell. Parameters must have checkable bounds,
+such as positive integer budgets and a positive timeout.
 
-## Результат
+## Result
 
-| Поле `ReductionResult` | Зміст |
+| `ReductionResult` field | Meaning |
 |---|---|
-| `source` | Незмінна вихідна `System` |
-| `reduced_system` | Скорочені залишки та їхня область у форматі SymPy |
-| `remaining_unknowns` | Упорядковані кінцеві координати |
-| `reconstruction` | Відображення всіх виключених змінних у SymPy |
-| `coordinate_map` | Пряма й обернена карти, якщо змінено координати |
-| `conditions` | Усі умови результату з походженням |
-| `additional_conditions` | Нові обмеження порівняно з вхідною областю |
-| `coverage` | `complete` відносно вхідної області або `conditional` |
-| `assumption_consistency` | `consistent`, `inconsistent`, `unknown` |
-| `certificate` | Версійований журнал перевірюваних кроків |
-| `symbolic_check` | Окремий статус SymPy-перевірки |
-| `formal_check` | Статус Lean, теорема, джерело, версії та журнал |
-| `metrics` | Порівняння складності до й після |
-| `search` | Бюджет, число кандидатів, повнота сімейства, причина зупинки |
+| `source` | Immutable source `System` |
+| `reduced_system` | Reduced residuals and their domain as SymPy objects |
+| `remaining_unknowns` | Ordered final coordinates |
+| `reconstruction` | SymPy mapping for all eliminated variables |
+| `coordinate_map` | Forward and inverse charts when coordinates change |
+| `conditions` | All result conditions with provenance |
+| `additional_conditions` | New restrictions relative to the input domain |
+| `coverage` | `complete` relative to the input domain, or `conditional` |
+| `assumption_consistency` | `consistent`, `inconsistent`, or `unknown` |
+| `certificate` | Versioned trace of checkable steps |
+| `symbolic_check` | Separate SymPy verification status |
+| `formal_check` | Lean status, theorem, source, versions, and log |
+| `metrics` | Complexity comparison before and after reduction |
+| `search` | Budget, candidate count, family completeness, and termination reason |
 
-У поточній реалізації `coordinate_map` і `metrics` дорівнюють `None`,
-а `search` містить причину зупинки детермінованого алгоритму.
-Формальний результат має також `origin`, `command`, `seconds`,
-`checked_at_utc` та хеш джерела. Після завантаження артефакту
-`origin="recorded"`: це історичний результат, не нова компіляція.
+For plain reduction, `coordinate_map` and `metrics` are `None`, while `search`
+records the deterministic algorithm's termination reason. The formal result
+also has `origin`, `command`, `seconds`, `checked_at_utc`, and a source hash.
+After artifact loading, `origin="recorded"` identifies a historical result,
+not fresh compilation.
 
-`reduced_system.residuals` і `reconstruction` мають залишатися об'єктами
-SymPy. Текстові представлення призначені для документації та експорту,
-а не для обов'язкового повторного парсингу всередині Python API.
+`reduced_system.residuals` and `reconstruction` must remain SymPy objects.
+Text representations are intended for documentation and export, not mandatory
+reparsing within the Python API.
 
-`coverage="complete"` допустиме лише коли сертифікат не обмежує вхідну
-множину розв'язків або доведено, що нові умови вже випливають із неї.
-Це не твердження про повноту пошуку чи існування розв'язків.
+`coverage="complete"` is valid only if the certificate does not restrict the
+input solution set, or if the new conditions are proved to follow from it.
+It makes no claim about search completeness or existence of solutions.
 
-## Режими доказу
+## Proof modes
 
-| `proof` | Очікувана поведінка |
+| `proof` | Expected behavior |
 |---|---|
-| `none` | Символьна перевірка; Lean не запускається, статус `not_requested` |
-| `generate` | Генерується джерело; статус `generated`, якщо експорт підтриманий |
-| `require` | Повернення сертифікованого результату лише після реальної Lean-перевірки |
+| `none` | Symbolic verification; Lean is not run, status `not_requested` |
+| `generate` | Source is generated; status `generated` if export is supported |
+| `require` | A certified result is returned only after actual Lean verification |
 
-При `require` відсутність Lean, тайм-аут, непідтримуваний експорт або
-відхилений доказ породжують `ProofVerificationError` із діагностикою
-та доступом до непідтвердженого кандидата. Непомітного переходу до
-`none` немає. Згенерований текст ніколи не має статусу `verified`.
+With `require`, missing Lean, a timeout, unsupported export, or a rejected
+proof raises `ProofVerificationError` with diagnostics and access to the
+unconfirmed candidate. There is no silent fallback to `none`.
+Generated text never has `verified` status.
 
-В інших режимах непідтримуваний експорт відображається в `formal_check`;
-коректний символьний результат можна досліджувати без заяви про формальну
-верифікацію. Неперевірений символьний кандидат не видається за підтверджену
-редукцію: повертається початкова система з діагностикою або явна помилка.
+In other modes, unsupported export is reported in `formal_check`; a valid
+symbolic result can be inspected without claiming formal verification.
+An unverified symbolic candidate is not presented as a confirmed reduction:
+the source system is returned with diagnostics, or an explicit error is raised.
 
-## Окремі операції
+## Separate operations
 
-Публічні функції:
+Public functions:
 
 ```python
 def verify_certificate(system, certificate): ...
@@ -158,25 +158,23 @@ def export_artifact(result, path): ...
 def load_artifact(path): ...
 ```
 
-Експорт у файл виконується лише явною операцією користувача.
-Завантаження артефакту перевіряє схему й цілісність; воно не запускає
-Lean і не повторює доказ автоматично.
+File export is an explicit user operation. Artifact loading checks the schema
+and integrity; it does not run Lean or automatically repeat the formal proof.
 
-## Винятки
+## Exceptions
 
-Базовий `EquiReduceError`; підкласи `InvalidSystemError`,
-`UnsupportedDomainError`, `UnsupportedExpressionError`,
-`CertificateError`, `ProofVerificationError`, `ArtifactError`.
-Повідомлення містить індекс рівняння, змінну або шлях до вузла виразу,
-де сталася проблема. Неможливість знайти скорочення сама по собі не є
-винятком. Суперечлива система також є математичним результатом,
-якщо її суперечливість справді обґрунтована.
+The base exception is `EquiReduceError`, with subclasses `InvalidSystemError`,
+`UnsupportedDomainError`, `UnsupportedExpressionError`, `CertificateError`,
+`ProofVerificationError`, and `ArtifactError`.
+Messages identify the equation index, variable, or expression node path where
+the problem occurred. Failure to find a reduction is not itself an exception.
+A contradictory system is also a mathematical result if the contradiction
+has actually been justified.
 
-## Експериментальний DAE API
+## Experimental DAE API
 
-`DAESystem.semi_explicit(...)` і `reduce_dae(...)` приймають часові
-функції, квадратний афінний алгебраїчний блок та відкритий інтервал.
-Вони повертають `DAEReductionResult` з реконструкцією, першими похідними,
-умовами на всьому інтервалі й перевіркою початкових даних.
-`verify_dae_certificate` перевіряє окремий ДАЕ-сертифікат.
-Алгебраїчний `System.algebraic` надалі відхиляє похідні.
+`DAESystem.semi_explicit(...)` and `reduce_dae(...)` accept time functions,
+a square affine algebraic block, and an open interval. They return
+`DAEReductionResult` with reconstruction, first derivatives, interval-wide
+conditions, and initial data checks. `verify_dae_certificate` checks a separate
+DAE certificate. Algebraic `System.algebraic` continues to reject derivatives.

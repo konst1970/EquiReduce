@@ -1,59 +1,59 @@
 # EquiReduce
 
-**Точна символьна редукція систем рівнянь із формальними доказами
-еквівалентності.** Незалежна бібліотека на Python із входом і
-виходом у SymPy та перевіркою сертифікатів у Lean 4 + Mathlib.
+**Exact symbolic reduction of equation systems with formal equivalence
+proofs.** An independent Python library with SymPy input and output,
+and certificate verification in Lean 4 + Mathlib.
 
-> Стан на 20.11.2026: доступна версія розробки `0.1.0.dev0`.
-> Реалізовано алгебраїчне ядро, сертифікати, Lean-бекенд і переносні
-> артефакти, афінні координати та обмежений пошук. Lean перевіряє
-> приклади 14 → 4, 4 → 3 і 14 → 3. Є експериментальний API напівявних
-> ДАЕ з доказом відповідності траєкторій і правила ланцюга.
-> Неявний MNA-конвеєр додатково має повний Lean-доказ, символьні
-> початкові дані, пошук розбиття та часові афінні карти з похідними.
-> Підтримано зовнішні диференційовні входи: повне правило ланцюга,
-> явні припущення Lean та точні початкові зразки значень і похідних.
-> Додано гладкі зарядові закони, `exp`, явні гілки та конкретний
-> зарядовий профіль NPN/PNP; неявний JSON має незалежне відновлення.
-> Це не опублікований реліз.
+> Status as of 2026-11-20: development version `0.1.0.dev0` is available.
+> The implementation includes the algebraic core, certificates, Lean backend,
+> portable artifacts, affine coordinates, and bounded search. Lean verifies
+> the 14 → 4, 4 → 3, and 14 → 3 examples. An experimental semi-explicit DAE
+> API provides trajectory correspondence and chain-rule proofs.
+> The implicit MNA pipeline also includes a complete Lean proof, symbolic
+> initial data, partition search, and time-dependent affine charts with derivatives.
+> Prescribed differentiable inputs are supported, including the full chain rule,
+> explicit Lean assumptions, and exact initial value and derivative samples.
+> Smooth charge laws, `exp`, explicit branches, and a concrete NPN/PNP charge
+> profile are supported; implicit JSON artifacts have independent replay.
+> This is not a published release.
 
-Бібліотека повертає скорочені рівняння, формули відновлення виключених
-змінних, умови допустимості, сертифікат перетворення та результат його
-перевірки. Редукція не передбачає числового розв'язання отриманої системи.
+The library returns reduced equations, reconstruction formulas for eliminated
+variables, validity conditions, a transformation certificate, and its verification
+result. Reduction does not numerically solve the resulting system.
 
-Перший реліз охоплює алгебраїчні системи над дійсними числами. Підтримка
-диференціально-алгебраїчних систем (DAE) доступна окремим експериментальним
-API для афінного алгебраїчного блока й підтриманої гладкої реконструкції.
-Точні обмеження наведені в [контракті ДАЕ](docs/dae.md) та
-[контракті неявного конвеєра](docs/implicit_dae.md).
+The first release covers algebraic systems over the real numbers. Differential-
+algebraic equation (DAE) support is available through a separate experimental
+API for affine algebraic blocks and supported smooth reconstruction.
+The precise limits are given in the [DAE contract](docs/dae.md) and
+[implicit pipeline contract](docs/implicit_dae.md).
 
-## Документація
+## Documentation
 
-[Початок роботи з реалізованою бібліотекою](docs/quickstart.md) ·
-[Звіт TDD та стан задач](docs/progress.md) ·
-[Довідник Python API](docs/reference.md).
+[Getting started with the implemented library](docs/quickstart.md) ·
+[TDD report and task status](docs/progress.md) ·
+[Python API reference](docs/reference.md).
 
-Початок читання: [зміст](docs/index.md), [призначення й поточний стан](docs/overview.md),
-[план реалізації](docs/roadmap.md).
+Start with the [contents](docs/index.md), [purpose and current status](docs/overview.md),
+and [implementation roadmap](docs/roadmap.md).
 
-Для початку розробки: [детальний план із задачами ER-01–ER-19](docs/implementation_plan.md).
+For development, read the [detailed ER-01–ER-19 implementation plan](docs/implementation_plan.md).
 
-- [Математичний контракт](docs/mathematical_contract.md).
-- [Алгоритми алгебраїчної редукції](docs/algebraic_reduction.md).
-- [DAE: межі першої реалізації та вимоги до доказів](docs/dae.md).
-- [Архітектура Python-бібліотеки](docs/architecture.md).
-- [Цільовий API](docs/api.md) і [приклади](docs/examples.md).
-- [Перевірка в Lean](docs/lean.md).
-- [Формат сертифікатів і аудит-артефактів](docs/artifacts.md).
-- [Тестування й критерії якості](docs/testing.md).
-- [Розробка, пакування та випуск](docs/development.md).
-- [Терміни й позначення](docs/glossary.md).
-- [Журнал архітектурних рішень](docs/decisions.md).
+- [Mathematical contract](docs/mathematical_contract.md).
+- [Algebraic reduction algorithms](docs/algebraic_reduction.md).
+- [DAEs: initial implementation limits and proof requirements](docs/dae.md).
+- [Python library architecture](docs/architecture.md).
+- [Target API](docs/api.md) and [examples](docs/examples.md).
+- [Lean verification](docs/lean.md).
+- [Certificate and audit artifact format](docs/artifacts.md).
+- [Testing and quality criteria](docs/testing.md).
+- [Development, packaging, and releases](docs/development.md).
+- [Terminology and notation](docs/glossary.md).
+- [Architecture decision records](docs/decisions.md).
 
-## Збирання документації
+## Building the documentation
 
-Виконується з каталогу `EquiReduce`. Для API-довідника встановлюється
-локальний пакет; Lean і Mathlib для документації не потрібні:
+Run these commands from `EquiReduce`. Install the local package for the API
+reference; Lean and Mathlib are not required to build the documentation:
 
 ```bash
 python3 -m venv .venv
@@ -61,8 +61,8 @@ python3 -m venv .venv
 .venv/bin/python -m sphinx -n -W --keep-going -b html docs docs/_build/html
 ```
 
-Відкрити `docs/_build/html/index.html`. Для перевірки Markdown без збірки
-можна читати файли безпосередньо в GitHub або редакторі.
+Open `docs/_build/html/index.html`. You can also read the Markdown files
+directly on GitHub or in an editor without building them.
 
-Назву дистрибутива `equireduce` ще треба перевірити на доступність перед
-публікацією. Ліцензію нового пакета також потрібно визначити до випуску.
+The availability of the distribution name `equireduce` must be checked before
+publication. A license for the new package must also be chosen before release.

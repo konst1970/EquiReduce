@@ -1,130 +1,129 @@
-# Тестування й критерії якості
+# Testing and quality criteria
 
-Розділ задає загальну стратегію перевірок. Реалізовані алгебраїчні
-й Lean-тести та фактичні результати описані у [звіті TDD](progress.md).
-Є позитивні й негативні ДАЕ-тести, реальні докази для поліноміальної,
-часозалежної раціональної й параметричної реконструкції та зв'язаного
-блока. Загальні розширення поза цим класом залишаються вимогами.
+This section defines the general validation strategy. Implemented algebraic
+and Lean tests and actual results are described in the [TDD report](progress.md).
+Positive and negative DAE tests include actual proofs for polynomial,
+time-dependent rational and parametric reconstruction, and a coupled block.
+General extensions outside this class remain requirements.
 
-## Рівні перевірки
+## Verification levels
 
-| Рівень | Що перевіряє | Чого не засвідчує |
+| Level | What it checks | What it does not establish |
 |---|---|---|
-| Структурний | Типи, області, порядок і повноту реконструкції | Тотожність рівнянь |
-| Символьний | Точні перетворення та сертифікат у SymPy | Незалежний Lean-доказ |
-| Формальний | Конкретну теорему через справжній Lean | Фізичну правильність вхідної моделі |
-| Диференціальний | Порівняння незалежних реалізацій | Доказ за всіх параметрів |
+| Structural | Types, domains, reconstruction order, and completeness | Equation identities |
+| Symbolic | Exact transformations and the certificate in SymPy | An independent Lean proof |
+| Formal | A specific theorem through actual Lean | Physical correctness of the input model |
+| Differential | Comparison of independent implementations | A proof for every parameter value |
 
-## Модульні тести
+## Unit tests
 
-- Вхід: порожні, прямокутні й надлишкові системи, повтори символів,
-  приховані параметри, неточні числа та похідні в неправильному домені.
-- Афінність: сталі, одиничні й блокові залежності, нелінійні перешкоди,
-  невизначені функції, `unknown` замість примусового рішення.
-- Умови: нульові знаменники, вироджені блоки, суперечливі припущення,
-  успадковані та нові обмеження.
-- Реконструкція: порядок, повнота, відсутність циклів, композиція
-  кількох виключень і координатних карт.
-- Пошук: детермінізм, дотримання бюджету та коректна неповнота.
-- Серіалізація: точний круговий перехід, відмова для невідомої схеми,
-  зіпсованих ID, непідтримуваних вузлів і надмірних розмірів.
-- Runner: відсутній інструмент, ненульовий код, тайм-аут і помилки вводу.
+- Input: empty, rectangular, and redundant systems, repeated symbols, hidden
+  parameters, inexact numbers, and derivatives in the wrong domain.
+- Affinity: constant, scalar, and block dependencies, nonlinear obstacles,
+  undefined functions, and `unknown` instead of a forced decision.
+- Conditions: zero denominators, singular blocks, contradictory assumptions,
+  inherited constraints, and new restrictions.
+- Reconstruction: order, completeness, absence of cycles, and composition
+  of multiple eliminations and coordinate charts.
+- Search: determinism, budget compliance, and correctly reported incompleteness.
+- Serialization: exact round trips and rejection of unknown schemas, corrupted
+  IDs, unsupported nodes, and excessive sizes.
+- Runner: missing tools, nonzero exit codes, timeouts, and input errors.
 
-Підміна процесу Lean допустима лише для останньої групи. Такі тести
-не враховуються як успішні формальні докази.
+Mocking the Lean process is allowed only for the last group. Such tests do
+not count as successful formal proofs.
 
-## Інтеграційні тести зі справжнім Lean
+## Integration tests with actual Lean
 
-Обов'язкові позитивні приклади: одиничне виключення з ненульовим
-символьним коефіцієнтом, оборотний блок, умовне координатне перетворення,
-композиція кроків і нерозкрита нелінійна функція.
+Required positive examples include scalar elimination with a nonzero symbolic
+coefficient, an invertible block, a conditional coordinate transformation,
+step composition, and an opaque nonlinear function.
 
-Для кожного заявленого класу експорту потрібен реальний приклад,
-зокрема для меж `Piecewise`, коренів і логарифмів, якщо їх оголошено
-підтримуваними. Форматування джерела не є достатнім тестом.
+Every claimed export class needs an actual example, including `Piecewise`
+boundaries, roots, and logarithms if they are declared supported.
+Formatting generated source is not a sufficient test.
 
-Негативні перевірки змінюють один змістовний елемент коректного прикладу:
+Negative checks change one meaningful element of a valid example:
 
-- знак або коефіцієнт скороченого рівняння;
-- формулу відновлення виключеної змінної;
-- необхідну умову невиродженості;
-- аргумент нерозкритої функції;
-- покриття гілок;
-- аксіому або підміну доказу через `sorry`.
+- A sign or coefficient in a reduced equation.
+- A reconstruction formula for an eliminated variable.
+- A necessary nonsingularity condition.
+- An opaque function argument.
+- Branch coverage.
+- An axiom or a proof replaced with `sorry`.
 
-Тест повинен установити, що відхилено саме математичну помилку,
-а не відсутній імпорт чи недоступний компілятор. Підготовлене
-середовище перевіряється позитивним контрольним прикладом.
+The test must establish rejection of the mathematical error rather than a
+missing import or unavailable compiler. A positive control example checks
+that the environment is prepared.
 
-## Властивості й регресії
+## Properties and regressions
 
-Генерувати невеликі точні афінні блоки з раціональними коефіцієнтами,
-вбудовані у нелінійне ядро. Перевіряти двосторонній сертифікат,
-перестановки координат, збереження області й детермінізм.
-Випадкові приклади мають обмежений розмір і відтворюване зерно.
+Generate small exact affine blocks with rational coefficients embedded in a
+nonlinear core. Check bidirectional certificates, coordinate permutations,
+domain preservation, and determinism. Randomized examples have bounded sizes
+and reproducible seeds.
 
-Регресійний набір включає 14 → 4 з Dnipro, неелектричні приклади,
-вироджені випадки та всі знайдені контрприклади експортера.
-Зміна хешів чи форми друку сама по собі не є математичною регресією;
-потрібно порівнювати контракт і зміст.
+The regression set includes Dnipro 14 → 4, examples outside electronics,
+degenerate cases, and every discovered exporter counterexample. A change in
+hash or printed form is not itself a mathematical regression; compare the
+contract and content.
 
-## Приймальний DAE-набір
+## DAE acceptance suite
 
-Реалізовано афінне алгебраїчне виключення, часові карти, зовнішні
-входи, узгоджені й неузгоджені початкові дані, збереження полюсів,
-гладкі зарядові закони та вибрані відкриті регіони `Piecewise`.
-Високий індекс, негладкі точки й вищі похідні мають негативні
-контрактні перевірки, а не статус підтриманого розв'язування.
+Implemented coverage includes affine algebraic elimination, time-dependent
+charts, prescribed inputs, consistent and inconsistent initial data, pole
+preservation, smooth charge laws, and selected open `Piecewise` regions.
+High index, nonsmooth points, and higher derivatives have negative contract
+checks rather than supported solving status.
 
-Гладкий набір включає обидві частинні похідні заряду, реальну `exp`,
-реконструкцію з `exp`, композицію з часовою картою та відхилення
-підміни градієнта справжнім Lean. Конкретні моделі NPN/PNP з фіксованим
-VT, MJE=MJC=0, TF/TR та Ерлі перевірено для обох заявлених гілок;
-окремо доведено баланс колектора, бази й емітера.
+The smooth suite includes both charge partial derivatives, actual `exp`,
+reconstruction involving `exp`, composition with a time chart, and rejection
+of a substituted gradient by actual Lean. Concrete NPN/PNP models with fixed
+VT, MJE=MJC=0, TF/TR, and Early effect are checked for both claimed branches;
+collector, base, and emitter balance is proved separately.
 
-Артефакти перевіряються після зміни структури, покриття, початкових
-даних та джерельних позначень із перерахованим SHA-256. CLI перевірено
-для JSON, LaTeX, Lean і тексту, повторного завантаження та прив'язки
-входів. Тести підтриманого шляху блокують `nsolve`, `Expr.equals`
-та числовий `Matrix.rank`. Числове інтегрування й SPICE не є частиною
-цих критеріїв.
+Artifacts are checked after changes to structure, coverage, initial data, and
+source labels with recomputed SHA-256 hashes. CLI coverage includes JSON,
+LaTeX, Lean, text, reloading, and input binding. Supported-path tests block
+`nsolve`, `Expr.equals`, and numerical `Matrix.rank`. Numerical integration
+and SPICE are not part of these criteria.
 
-Для статусу формально підтримуваного DAE-класу потрібні Lean-теореми
-на інтервалі. Перевірка тексту згенерованого джерела не замінює
-компіляцію позитивного й змістовного негативного прикладів.
+Formal support for a DAE class requires interval Lean theorems. Inspecting
+generated source text does not replace compilation of positive and meaningful
+negative examples.
 
 ## CI
 
-Заплановані незалежні завдання:
+Planned independent jobs:
 
-1. Ruff і перевірка анотацій типів.
-2. Звичайні Python-тести на всіх заявлених версіях Python.
-3. Інтеграційні Lean-тести на закріпленому toolchain.
-4. Sphinx HTML-збірка з попередженнями як помилками.
-5. Збірка wheel/sdist та встановлення wheel у чисте оточення.
+1. Ruff and type annotation checks.
+2. Ordinary Python tests on every claimed Python version.
+3. Lean integration tests on the pinned toolchain.
+4. Sphinx HTML build with warnings treated as errors.
+5. Wheel/sdist builds and wheel installation in a clean environment.
 
-Маркери: `unit`, `integration`, `lean`, `slow` із реєстрацією в
-`pyproject.toml`. CI формального бекенда не має мовчки пропускати
-Lean-тести. У локальному оточенні без Lean пропуск допустимий і видимий.
+Markers `unit`, `integration`, `lean`, and `slow` are registered in
+`pyproject.toml`. Formal backend CI must not silently skip Lean tests.
+In a local environment without Lean, skipping is allowed and visible.
 
-Версії Python у матриці визначаються фактичними прогонами, починаючи
-з мінімальної 3.11; не слід оголошувати протестованими нові версії
-лише на підставі `requires-python`.
+Python versions in the matrix are determined by actual runs, starting with
+the minimum 3.11; new versions must not be called tested solely because of
+`requires-python`.
 
-## Критерій готовності першого релізу
+## First-release readiness criterion
 
-- Незалежне встановлення без Dnipro та імпорт без Lean.
-- Підтверджена точність реконструкції та збереження областей.
-- Реальні позитивні й негативні Lean-тести без `sorryAx`.
-- Перевірка міграції 14 → 4 та щонайменше двох неелектричних прикладів.
-- Відтворювані артефакти та перевірене встановлення wheel.
-- Документація відповідає реалізації; приклади доступного API виконуються.
-- Немає прихованого переходу від запитаного формального доказу до CAS.
+- Independent installation without Dnipro and import without Lean.
+- Confirmed exact reconstruction and domain preservation.
+- Actual positive and negative Lean tests without `sorryAx`.
+- Migration validation for 14 → 4 and at least two examples outside electronics.
+- Reproducible artifacts and verified wheel installation.
+- Documentation matches implementation; available API examples execute.
+- No hidden fallback from requested formal proof to CAS.
 
-## Продуктивність
+## Performance
 
-Вимірюються окремо підготовка, пошук, SymPy-перевірка, генерація Lean,
-компіляція та пікова пам'ять. Для Lean фіксуються прогрітий або холодний
-кеш і повторення. Зменшення числа змінних не гарантує прискорення.
-Жорсткі пороги часу вводяться лише для стабільного середовища;
-звичайні модульні тести не прив'язуються до випадкових секунд виконання.
+Measure preparation, search, SymPy verification, Lean generation, compilation,
+and peak memory separately. Record warm or cold Lean caches and repetitions.
+Fewer variables do not guarantee a speedup. Strict time thresholds are used
+only in stable environments; ordinary unit tests do not depend on incidental
+wall-clock durations.

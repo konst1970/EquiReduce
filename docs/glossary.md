@@ -1,32 +1,32 @@
-# Терміни й позначення
+# Terminology and notation
 
-| Термін | Значення в EquiReduce |
+| Term | Meaning in EquiReduce |
 |---|---|
-| Залишок рівняння | Вираз $F_i$, для якого задається $F_i=0$ |
-| Редукція | Точне перетворення зі збереженням заявленої відповідності розв'язків |
-| Спрощення | Оптимізація обраної метрики; не обов'язково менший друкований вираз |
-| Невідома | Координата, значення якої має задовольняти систему |
-| Параметр | Явно оголошена величина, що не виключається й у DAE стала в часі |
-| Афінність за $Y$ | Подання $A(Z,p)Y+b(Z,p)$, де коефіцієнти не залежать від $Y$ |
-| Реконструкція | Формули відновлення всіх початкових змінних із кінцевих координат |
-| Область визначення | Умови, за яких початкові вирази мають потрібний математичний зміст |
-| Умова кроку | Припущення, потрібне конкретному виключенню або перетворенню |
-| Умовна редукція | Еквівалентність доведено лише для явно обмеженої частини області |
-| Сертифікат | Дані й свідчення, достатні для перевірки перетворення |
-| Символьна перевірка | Перевірка тотожностей у CAS, тут SymPy |
-| Формальна перевірка | Прийняття конкретної теореми Lean із дозволеними залежностями |
-| Артефакт | Версійований переносний комплект входу, результату й свідчень |
-| Протокол | Відомості про конкретний запуск інструментів |
-| AST | Дерево виразу з явно визначеними типами вузлів |
-| DAG | Граф виразів зі спільними підвиразами |
-| DAE | Диференціально-алгебраїчна система |
-| Класична траєкторія | Функції заданої регулярності, що виконують рівняння на інтервалі |
-| Узгоджені початкові дані | Дані, які задовольняють алгебраїчні й необхідні диференціальні обмеження |
-| Диференціальний індекс | Характеристика потрібного диференціювання обмежень; не число похідних у записі |
-| Toolchain | Зафіксований набір версій формального інструментарію |
+| Equation residual | Expression $F_i$ defining the equation $F_i=0$ |
+| Reduction | Exact transformation preserving the stated solution correspondence |
+| Simplification | Optimization of a chosen metric; not necessarily a shorter printed expression |
+| Unknown | A coordinate whose value must satisfy the system |
+| Parameter | An explicitly declared quantity that is not eliminated and is constant in time in a DAE |
+| Affinity in $Y$ | Representation $A(Z,p)Y+b(Z,p)$ with coefficients independent of $Y$ |
+| Reconstruction | Formulas recovering all source variables from final coordinates |
+| Domain of definition | Conditions under which source expressions have the required mathematical meaning |
+| Step condition | Assumption required by a particular elimination or transformation |
+| Conditional reduction | Equivalence proved only on an explicitly restricted part of the domain |
+| Certificate | Data and witnesses sufficient to check a transformation |
+| Symbolic verification | Identity checks in a CAS, here SymPy |
+| Formal verification | Acceptance of a specific Lean theorem with allowed dependencies |
+| Artifact | Versioned portable bundle of input, result, and evidence |
+| Run report | Information about a particular tool invocation |
+| AST | Expression tree with explicitly defined node types |
+| DAG | Expression graph with shared subexpressions |
+| DAE | Differential-algebraic equation system |
+| Classical trajectory | Functions of specified regularity satisfying the equations on an interval |
+| Consistent initial data | Data satisfying the algebraic and necessary differential constraints |
+| Differential index | A measure of required constraint differentiation; not the number of written derivatives |
+| Toolchain | Pinned set of formal tool versions |
 
-Позначення: $X$ — початкові координати; $Z$ — кінцеві;
-$Y$ — виключені; $p$ — параметри; $F$ — початкові залишки;
-$H$ — скорочені; $P$ — проєкція; $R$ — повна реконструкція;
-$\varphi$ — формули виключених змінних; $C$ — умови кроків;
-$D_F$ — область початкової системи; $I$ — часовий інтервал.
+Notation: $X$ — source coordinates; $Z$ — final coordinates;
+$Y$ — eliminated coordinates; $p$ — parameters; $F$ — source residuals;
+$H$ — reduced residuals; $P$ — projection; $R$ — full reconstruction;
+$\varphi$ — formulas for eliminated variables; $C$ — step conditions;
+$D_F$ — source system domain; $I$ — time interval.

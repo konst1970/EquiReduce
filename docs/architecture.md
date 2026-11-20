@@ -1,38 +1,39 @@
-# Архітектура Python-бібліотеки
+# Python library architecture
 
-## Залежності та межі
+## Dependencies and boundaries
 
-Виробник рівнянь → `System` → редуктор → сертифікат → незалежний
-перевіряльник → необов'язковий Lean-бекенд → `ReductionResult`.
+Equation producer → `System` → reducer → certificate → independent verifier
+→ optional Lean backend → `ReductionResult`.
 
-Ядро залежить від стандартної бібліотеки Python і SymPy. Lean та Mathlib
-є зовнішнім інструментальним середовищем, не залежністю `pip` ядра.
-Для звичайного імпорту бібліотеки не потрібні Git, Lake, мережа або
-предметний пакет на кшталт Dnipro.
+The core depends on the Python standard library and SymPy. Lean and Mathlib
+form an external tool environment, not a core `pip` dependency. Ordinary
+library import requires neither Git, Lake, network access, nor an application
+package such as Dnipro.
 
-Модулі побудови схеми, SPICE-парсер, моделі BJT та числові розв'язувачі
-залишаються за межами EquiReduce. Під час редукції не запускаються
-автоматичні завантаження Lean або Mathlib.
+Circuit construction, the SPICE parser, BJT models, and numerical solvers
+remain outside EquiReduce. Reduction does not automatically download Lean
+or Mathlib.
 
-## Запланована структура
+## Planned structure
 
-У `0.1.0.dev0` уже є `system.py`, `result.py`, `conditions.py`, `api.py`,
-`artifacts.py`, `lean.py`, `coordinates.py`, `search.py`, `metrics.py`,
-`dae.py` та приватні `_core.py`, `_lean_export.py`, `_coordinate_lean.py`,
-`_dae_lean.py`. Виділені примітиви поки збережені у приватних модулях із
-зазначенням походження в `PROVENANCE.md`. Нижче наведено цільову
-структуру для подальшого розділення; вона не видається за поточне дерево.
+`0.1.0.dev0` already includes `system.py`, `result.py`, `conditions.py`,
+`api.py`, `artifacts.py`, `lean.py`, `coordinates.py`, `search.py`,
+`metrics.py`, `dae.py`, and private modules `_core.py`, `_lean_export.py`,
+`_coordinate_lean.py`, and `_dae_lean.py`. Extracted primitives remain in
+private modules with their origins recorded in `PROVENANCE.md`.
+The following layout is a target for further separation, not the current tree.
 
-Наведене дерево — ціль першої реалізації, а не перелік уже створених файлів.
+This tree describes the initial implementation target rather than files
+that have all already been created.
 
 ```text
 EquiReduce/
   pyproject.toml
   src/equireduce/
     __init__.py
-    system.py                 # незмінний загальний опис системи
-    result.py                 # результат і статуси
-    conditions.py             # області, припущення, зобов'язання
+    system.py                 # immutable general system description
+    result.py                 # result and statuses
+    conditions.py             # domains, assumptions, obligations
     errors.py
     algebraic/
       affinity.py
@@ -45,70 +46,69 @@ EquiReduce/
       verify.py
       serialization.py
     backends/lean/
-      expressions.py          # явно підтримуваний піднабір SymPy
+      expressions.py          # explicitly supported SymPy subset
       algebraic.py
       runner.py
       manifest.py
-  lean/                       # закріплені toolchain і Mathlib
+  lean/                       # pinned toolchain and Mathlib
   examples/
   tests/{unit,integration,properties,regression}/
   docs/
 ```
 
-Пакет `dae/` і Lean-теореми про траєкторії додаються лише на відповідному
-етапі. Відсутня можливість не повинна маскуватися порожнім «успішним»
-бекендом або заглушкою доказу.
+The `dae/` package and Lean trajectory theorems are added at the corresponding
+stage. An absent feature must not be hidden behind an empty "successful"
+backend or proof stub.
 
-## Обов'язки компонентів
+## Component responsibilities
 
-| Компонент | Відповідальність |
+| Component | Responsibility |
 |---|---|
-| `System` | Перевірений незмінний вхід, порядок координат і областей |
-| Умови | Походження припущень, нові обмеження та статус узгодженості |
-| Редуктор | Побудова точних кроків і реконструкції |
-| Пошук | Перебір і ранжування; не визначає істинність сертифіката |
-| Сертифікат | Дані, достатні для незалежної перевірки кроків |
-| SymPy-перевіряльник | Точні тотожності та структурні інваріанти |
-| Lean-експортер | Переклад підтримуваних виразів і генерація теореми |
-| Lean-runner | Запуск конкретного компілятора, журнал, тайм-аут, статус |
-| Серіалізатор | Версійований безпечний формат даних та хешування |
+| `System` | Validated immutable input, coordinate order, and domains |
+| Conditions | Assumption provenance, new restrictions, and consistency status |
+| Reducer | Construction of exact steps and reconstruction |
+| Search | Enumeration and ranking; does not determine certificate validity |
+| Certificate | Data sufficient for independent step verification |
+| SymPy verifier | Exact identities and structural invariants |
+| Lean exporter | Translation of supported expressions and theorem generation |
+| Lean runner | Specific compiler invocation, log, timeout, and status |
+| Serializer | Versioned safe data format and hashing |
 
-Перевіряльник і редуктор можуть використовувати спільні примітиви
-арифметики, але перевірка не повинна просто довіряти прапорцю, який
-встановив генератор. Формальна компіляція — окремий рівень перевірки.
+The verifier and reducer may share arithmetic primitives, but verification
+must not simply trust a flag set by the generator. Formal compilation is a
+separate verification layer.
 
-## Інваріанти даних
+## Data invariants
 
-- Вхід не змінюється; матриці результату незмінні, колекції впорядковані.
-- Кожна початкова невідома або збережена, або відновлюється.
-- Реконструкція ациклічна й виражена через кінцеві координати.
-- Умови мають походження: вхід, знаменник, опорний блок, гілка,
-  координатне перетворення або диференціювання реконструкції ДАЕ.
-- Усі вільні символи оголошені; невідомі, параметри й незалежна змінна
-  не підміняють одне одного.
-- Статуси пошуку, символьної перевірки й Lean-компіляції незалежні.
+- Input is unchanged; result matrices are immutable and collections are ordered.
+- Every source unknown is either retained or reconstructed.
+- Reconstruction is acyclic and expressed through final coordinates.
+- Conditions have provenance: input, denominator, pivot block, branch,
+  coordinate transformation, or DAE reconstruction differentiation.
+- All free symbols are declared; unknowns, parameters, and the independent
+  variable must not be substituted for one another.
+- Search, symbolic verification, and Lean compilation have independent statuses.
 
-## Виділення з Dnipro
+## Extraction from Dnipro
 
-1. Зафіксувати регресійні приклади прототипу.
-2. Перенести математичні типи без імпортів `dnipro` та без `domain="dc"`.
-3. Замінити предметні поля `node_order`, `branch_current_order` на
-   необов'язкові зовнішні метадані, які не впливають на доказ.
-4. Перенести алгоритми й перевіряльники з аудитом припущень та областей.
-5. Перенести Lean-експортер, перевіряючи класи виразів реальним Lean.
-6. Створити адаптер у Dnipro, який явно отримує статичні рівняння й
-   передає їх у EquiReduce. Не просто перейменовувати часовий домен у DC.
-7. Порівняти результати до і після перенесення на тих самих системах.
+1. Fix regression examples for the prototype.
+2. Extract mathematical types without `dnipro` imports or `domain="dc"`.
+3. Replace application fields `node_order` and `branch_current_order` with
+   optional external metadata that does not affect the proof.
+4. Extract algorithms and verifiers while auditing assumptions and domains.
+5. Extract the Lean exporter, checking expression classes with actual Lean.
+6. Create a Dnipro adapter that explicitly obtains static equations and passes
+   them to EquiReduce. Do not simply relabel the time domain as DC.
+7. Compare results before and after extraction on the same systems.
 
-Рекомендоване розташування адаптера — в Dnipro: тоді EquiReduce не має
-зворотної залежності. Після міграції потрібен один підтримуваний
-математичний код, а не дві незалежно змінювані копії.
+The recommended adapter location is Dnipro, avoiding a reverse dependency
+from EquiReduce. After migration, maintain one mathematical implementation
+rather than two copies that change independently.
 
-## Детермінізм і ресурси
+## Determinism and resources
 
-Порядок невідомих, кандидатів, умов та імен Lean фіксується. Бюджети
-пошуку й розмірів виразів передаються явно. Тимчасові каталоги унікальні
-для запуску; паралельні перевірки не перезаписують спільний файл доказу.
-Кеш прив'язується до вхідних даних, припущень, версій і змісту доказу.
-Результат із кешу позначається як повторне використання попередньої
-перевірки, а не як нова компіляція.
+Unknown, candidate, condition, and Lean name order is fixed. Search and
+expression-size budgets are explicit. Temporary directories are unique per
+run; parallel checks do not overwrite a shared proof file. Caches are keyed
+by input, assumptions, versions, and proof content. A cached result is
+identified as reuse of an earlier verification rather than fresh compilation.

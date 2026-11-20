@@ -1,98 +1,97 @@
-# План реалізації
+# Implementation roadmap
 
-План задає порядок і критерії завершення. Календарних строків не
-встановлено. M1 реалізовано, основний інженерний обсяг M2 працює у
-`0.1.0.dev0`; релізні рішення й M3–M5 ще попереду.
-Фактичні перевірки наведено у [звіті виконання](progress.md).
+This roadmap defines the original milestone order and completion criteria,
+without calendar deadlines. M1 is implemented and the main engineering scope
+of M2 works in `0.1.0.dev0`; release decisions and subsequent milestones are
+tracked in the [progress report](progress.md), including completed extensions.
 
-[Детальний план реалізації](implementation_plan.md) містить задачі
-ER-01–ER-19, залежності, критерії завершення та першу робочу ітерацію.
-Ця сторінка залишається короткою дорожньою картою етапів.
+The [detailed implementation plan](implementation_plan.md) contains ER-01–ER-19,
+dependencies, completion criteria, and the first working iteration.
+This page remains a short milestone roadmap.
 
-## M0 — узгодження контракту
+## M0 — agree on the contract
 
-Результат: цей комплект документації, явна межа алгебраїки й DAE,
-визначення умовної еквівалентності, цільовий API та критерії приймання.
+Deliverable: this documentation set, an explicit algebra/DAE boundary,
+a definition of conditional equivalence, the target API, and acceptance criteria.
 
-Перед перенесенням коду треба підтвердити ліцензію й походження
-матеріалів. Необов'язкові подальші можливості не блокують перший MVP.
+Before extracting code, confirm licensing and material provenance.
+Optional future capabilities do not block the first MVP.
 
-## M1 — незалежне алгебраїчне ядро
+## M1 — independent algebraic core
 
-Роботи:
+Work:
 
-- Створити `pyproject.toml`, `src/equireduce`, тести та базовий CI.
-- Реалізувати загальні `System`, `ReductionResult`, умови й винятки.
-- Перенести афінний аналіз, одиничне та блокове виключення.
-- Реалізувати повну реконструкцію та незалежний перевіряльник сертифіката.
-- Запровадити точні числа, збереження областей і тристатусну перевірку.
+- Create `pyproject.toml`, `src/equireduce`, tests, and basic CI.
+- Implement general `System`, `ReductionResult`, conditions, and exceptions.
+- Extract affine analysis and scalar and block elimination.
+- Implement full reconstruction and an independent certificate verifier.
+- Introduce exact numbers, domain preservation, and three-valued checks.
 
-Завершено, коли бібліотека працює без Dnipro, приймає загальні SymPy-системи,
-коректно повертає незмінений результат за відсутності підтримуваних
-кроків і проходить позитивні та вироджені алгебраїчні приклади.
-Похідні на цьому етапі явно відхиляються.
+Complete when the library works without Dnipro, accepts general SymPy systems,
+correctly returns an unchanged result when no supported steps exist, and passes
+positive and degenerate algebraic examples. Derivatives are explicitly rejected
+at this stage.
 
-## M2 — формальний алгебраїчний бекенд і аудит
+## M2 — formal algebraic backend and auditing
 
-Роботи:
+Work:
 
-- Перенести та перевірити експортер підтримуваного піднабору SymPy.
-- Закріпити Lean/Mathlib, реалізувати runner і контроль аксіом.
-- Підтримати режими `none`, `generate`, `require` без прихованого fallback.
-- Реалізувати безпечний JSON-формат і комплект відтворення.
-- Скомпілювати результати нового конвеєра для 14 → 4 та неелектричних систем.
+- Extract and validate the exporter for the supported SymPy subset.
+- Pin Lean/Mathlib and implement the runner and axiom auditing.
+- Support `none`, `generate`, and `require` without hidden fallback.
+- Implement a safe JSON format and reproduction bundle.
+- Compile new-pipeline results for 14 → 4 and systems outside electronics.
 
-Завершено, коли реальні Lean-тести приймають правильні перетворення,
-відхиляють навмисні помилки, а чужий протокол або змінений доказ
-не можуть бути видані за поточну перевірку.
+Complete when actual Lean tests accept correct transformations, reject
+deliberate errors, and do not allow an unrelated run report or changed proof
+to be presented as a current verification.
 
-**Кандидат першого релізу `0.1.0` = M1 + M2**, включно з усіма
-загальними критеріями тестування й пакування. Для нього не потрібні
-універсальна DAE-редукція або складний автоматичний пошук.
+**First `0.1.0` release candidate = M1 + M2**, including all general testing
+and packaging criteria. Universal DAE reduction and complex automatic search
+are not prerequisites.
 
-## M3 — координати, пошук і інтеграція Dnipro
+## M3 — coordinates, search, and Dnipro integration
 
-Роботи:
+Work:
 
-- Перенести афінні карти та обмежений детермінований пошук.
-- Довести композицію карти й виключення до вихідної системи.
-- Додати метрики й реальні benchmark-запуски Lean.
-- Створити адаптер у Dnipro й прибрати дублювання математичного коду.
-- Формально закрити приклад 4 → 3 окремим доказом нового конвеєра.
+- Extract affine charts and bounded deterministic search.
+- Prove composition of the chart and elimination back to the source system.
+- Add metrics and actual Lean benchmark runs.
+- Create a Dnipro adapter and remove duplicate mathematical code.
+- Formally close 4 → 3 with a separate proof from the new pipeline.
 
-Завершено, коли повнота пошуку правильно обмежена оголошеним сімейством,
-результат залежить лише від явного входу й параметрів, а Dnipro
-відтворює попередні приклади через незалежний пакет.
+Complete when search completeness is correctly restricted to the declared
+family, results depend only on explicit input and parameters, and Dnipro
+reproduces earlier examples through the independent package.
 
-## M4 — експериментальна підтримка DAE індексу 1
+## M4 — experimental index-1 DAE support
 
-Роботи:
+Work:
 
-- Затвердити `DAESystem`, представлення часу, функцій і початкових даних.
-- Обмежитися напівявним класом із афінним оборотним алгебраїчним блоком.
-- Формалізувати регулярність, область на інтервалі й початкову узгодженість.
-- Реалізувати реконструкцію та незалежні DAE-сертифікати.
-- Скомпілювати Lean-теореми еквівалентності траєкторій.
+- Agree on `DAESystem` and the representation of time, functions, and initial data.
+- Restrict support to a semi-explicit class with an affine invertible algebraic block.
+- Formalize regularity, interval domains, and initial consistency.
+- Implement reconstruction and independent DAE certificates.
+- Compile Lean trajectory equivalence theorems.
 
-Завершено, коли позитивні приклади мають справжні двосторонні докази
-на інтервалі, а високий індекс, порушення області й неузгоджені початкові
-умови явно відхиляються. Позначення DAE як підтримуваного класу
-не допускається до виконання цього критерію.
+Complete when positive examples have actual bidirectional interval proofs,
+while high index, domain violations, and inconsistent initial conditions are
+explicitly rejected. Do not claim DAE support before this criterion is met.
 
-## M5 — розширення DAE
+## M5 — DAE extensions
 
-Можливі роботи після M4: похідні реконструйованих алгебраїчних змінних,
-правило ланцюга, часові координатні перетворення, обмежене розгалуження
-та окремі класи вищого індексу. Кожен клас отримує власний контракт,
-області, обмеження й формальні тести.
+Possible work after M4 includes derivatives of reconstructed algebraic variables,
+the chain rule, time-dependent coordinate transformations, bounded branching,
+and selected higher-index classes. Each class gets its own contract, domains,
+limits, and formal tests.
 
-Автоматичне зниження довільного індексу, негладкі події, гібридні системи,
-PDE та наближені моделі не включені автоматично. Їхня підтримка потребує
-окремого рішення й оцінки обсягу робіт.
+Automatic reduction of arbitrary index, nonsmooth events, hybrid systems,
+PDEs, and approximate models are not automatically included. Supporting them
+requires a separate decision and scope estimate.
 
-## Найближчий конкретний крок
+## Initial concrete step
 
-Почати M1: створити каркас Python-пакета та загальний тип алгебраїчної
-системи, потім перенести одиничне афінне виключення з перевіркою
-реконструкції. Не починати з копіювання всього `dnipro/analysis`
-або з обіцянки підтримки довільних DAE.
+Start M1 by creating the Python package skeleton and a general algebraic system
+type, then extract scalar affine elimination with reconstruction verification.
+Do not start by copying all of `dnipro/analysis` or promising support for
+arbitrary DAEs.

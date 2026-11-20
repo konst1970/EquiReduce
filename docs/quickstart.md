@@ -1,20 +1,20 @@
-# Початок роботи
+# Getting started
 
-Інструкція для реалізованої алгебраїчної версії `0.1.0.dev0`.
-Координатний пошук і експериментальні ДАЕ описані в окремих розділах.
-Команди виконуються з кореня `EquiReduce`.
+This guide covers the implemented algebraic version `0.1.0.dev0`.
+Coordinate search and experimental DAEs have separate sections.
+Run the commands from the `EquiReduce` root.
 
-## Встановлення
+## Installation
 
 ```bash
 python3 -m venv .venv
 .venv/bin/python -m pip install -e '.[dev,docs]'
 ```
 
-Для використання лише ядра достатньо `pip install -e .`.
-Потрібен Python 3.11+ і SymPy 1.14; Lean не потрібний для імпорту.
+For core use only, `pip install -e .` is sufficient.
+Python 3.11+ and SymPy 1.14 are required; Lean is not required for import.
 
-## Скорочення у SymPy
+## Reduction in SymPy
 
 ```python
 import sympy as sp
@@ -33,16 +33,15 @@ assert verify_certificate(system, result.certificate).status.value == "verified"
 print(result.reduced_system.residuals)
 ```
 
-Залишається рівняння, еквівалентне `x/a + x - 1 = 0`.
-Без початкової умови `a != 0` результат буде `coverage="conditional"`,
-а умова з'явиться в `additional_conditions`.
-Знакові припущення підтримуються. Похідні, дискретні області й рядки
-замість SymPy-виразів явно відхиляються.
+The remaining equation is equivalent to `x/a + x - 1 = 0`.
+Without the source condition `a != 0`, the result has `coverage="conditional"`,
+and the condition appears in `additional_conditions`.
+Sign assumptions are supported. Derivatives, discrete domains, and strings
+in place of SymPy expressions are explicitly rejected.
 
-## Перевірка Lean
+## Lean verification
 
-Початкове встановлення Elan/Lean виконується окремо. Для закріпленого
-Lake-проєкту:
+Install Elan/Lean separately. Prepare the pinned Lake project:
 
 ```bash
 cd lean
@@ -51,7 +50,7 @@ lake exe cache get Mathlib.Basic.Real.Basic Mathlib.Tactic.FieldSimp Mathlib.Tac
 cd ..
 ```
 
-Після підготовки залежностей:
+After preparing the dependencies:
 
 ```python
 from equireduce import LeanConfig, reduce_system
@@ -64,13 +63,13 @@ assert verified.formal_check.status.value == "verified"
 print(verified.formal_check.axioms)
 ```
 
-`proof="generate"` лише створює джерело. `proof="require"` повертає
-результат тільки після компіляції та перевірки аксіом.
-Формальний піднабір зараз: раціональна арифметика, цілі степені,
-предикати умов і нерозкриті функції. Наприклад, явний `sin` у залишку
-дає `unsupported`, а не удаваний доказ.
+`proof="generate"` only creates source code. `proof="require"` returns a result
+only after compilation and axiom auditing.
+The current formal subset includes rational arithmetic, integer powers,
+condition predicates, and opaque functions. For example, explicit `sin` in a
+residual yields `unsupported` rather than an unsupported claim of proof.
 
-## Переносний комплект
+## Portable bundle
 
 ```python
 from equireduce import export_artifact, load_artifact
@@ -81,11 +80,11 @@ assert restored.reconstruction == verified.reconstruction
 assert restored.formal_check.origin == "recorded"
 ```
 
-Для нової компіляції використайте `verify_with_lean` із завантаженими
-`source` та `certificate`. Завантаження JSON саме не запускає Lean.
-Щоб записати лише JSON, передайте шлях із суфіксом `.json`.
+For fresh compilation, call `verify_with_lean` with the loaded `source` and
+`certificate`. Loading JSON does not run Lean.
+To write only JSON, pass a path with the `.json` suffix.
 
-## Приймальні приклади
+## Acceptance examples
 
 ```bash
 .venv/bin/python examples/flow_balance.py
@@ -99,13 +98,13 @@ assert restored.formal_check.origin == "recorded"
 .venv/bin/python -m examples.coordinate_benchmark
 ```
 
-Формальні приклади створюють перевірені комплекти в `examples/output/`.
-`bjt14` приймає всі 14 початкових рівнянь і відновлює 10 виключених
-змінних; старий Lean-файл із Dnipro як доказ не використовується.
-`bjt143` додатково задає залежність функцій від різниць напруг і
-доводить повний перехід від 14 вихідних рівнянь до трьох координат.
+The formal examples create verified bundles in `examples/output/`.
+`bjt14` accepts all 14 source equations and reconstructs 10 eliminated
+variables; the old Dnipro Lean file is not used as its proof.
+`bjt143` additionally specifies dependence on voltage differences and proves
+the full transition from 14 source equations to three coordinates.
 
-## Перевірки
+## Checks
 
 ```bash
 .venv/bin/python -m pytest -m 'not lean'
@@ -115,6 +114,6 @@ EQUIREDUCE_REQUIRE_LEAN=1 .venv/bin/python -m pytest -m lean
 .venv/bin/python -m sphinx -n -W --keep-going -b html docs docs/_build/html
 ```
 
-Без підготовленого Lean відповідні тести локально пропускаються.
-З `EQUIREDUCE_REQUIRE_LEAN=1` це стає помилкою. Тести з підміною процесу
-не використовуються як докази математичної коректності.
+Tests requiring Lean are skipped locally if its environment is not prepared.
+With `EQUIREDUCE_REQUIRE_LEAN=1`, this is an error. Tests that mock the process
+are not treated as evidence of mathematical correctness.

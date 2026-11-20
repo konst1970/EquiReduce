@@ -1,11 +1,11 @@
-# Координати, пошук і вимірювання
+# Coordinates, search, and measurements
 
-## Явна афінна карта
+## Explicit affine chart
 
-`AffineTransform.create` задає $X=MU+c$, де коефіцієнти залежать лише
-від оголошених параметрів. Нові координати — свіжі необмежені дійсні
-символи. Матриця має бути квадратною та оборотною; потрібні умови
-ненульовості визначника й знаменників повертаються явно.
+`AffineTransform.create` defines $X=MU+c$, with coefficients depending only
+on declared parameters. New coordinates are fresh unrestricted real symbols.
+The matrix must be square and invertible; required nonzero determinant and
+denominator conditions are returned explicitly.
 
 ```python
 import sympy as sp
@@ -19,13 +19,13 @@ assert result.remaining_unknowns == (v,)
 assert result.reconstruction == {x: 1+v, y: 1-v}
 ```
 
-`result.source` зберігає початкову систему. Складений сертифікат містить
-карту, обернену карту й журнал виключення в нових координатах.
-Незалежна перевірка повторно перевіряє всі частини. Lean доводить
-повну еквівалентність із існуванням нових координат і реконструкцією
-початкових змінних. Сертифікат лише внутрішньої системи недостатній.
+`result.source` retains the source system. The composed certificate contains
+the chart, inverse chart, and elimination trace in the new coordinates.
+Independent verification rechecks every part. Lean proves full equivalence
+with existence of the new coordinates and reconstruction of the source
+variables. A certificate for only the inner system is insufficient.
 
-## Скінченний пошук
+## Finite search
 
 ```python
 from equireduce import ReductionOptions, search_coordinates
@@ -36,52 +36,53 @@ best = search_coordinates(system, options=ReductionOptions(
 assert best.search.candidates_evaluated <= 11
 ```
 
-Сімейство `integer-affine-and-shared-reference/v1` містить одиничну
-карту, спільні опорні координати для розмірності від трьох, попарні
-перестановки, цілочисельні зсуви й карти суми/різниці. Порядок сталий.
-Для $n$ координат і межі $b$ розмір сімейства:
+The `integer-affine-and-shared-reference/v1` family contains the identity
+chart, shared-reference coordinates for dimensions of at least three, pairwise
+permutations, integer shears, and sum/difference charts. Its order is fixed.
+For $n$ coordinates and bound $b$, the family size is
 
 $$1+n(n-1)(2b+1)+\begin{cases}n,&n\ge3,\\0,&n<3.\end{cases}$$
 
-Бюджет обмежує кількість карт, а не час окремого символьного кроку.
-Звіт містить бюджет, число доступних/перевірених карт, вибраний індекс
-і `complete`. Повнота стосується лише оголошеного сімейства; вона не
-доводить глобального мінімуму серед усіх можливих координат.
+The budget bounds the number of charts, not the duration of a single symbolic
+step. The report contains the budget, available/evaluated chart counts, the
+selected index, and `complete`. Completeness applies only to the declared
+family; it does not prove a global minimum over all possible coordinates.
 `reduce_system(..., options=ReductionOptions(coordinate_search=True))`
-використовує той самий пошук. Явні `candidates` задавайте через
-`reduce_in_coordinates`, де відомі нові імена змінних.
+uses the same search. Specify explicit `candidates` through
+`reduce_in_coordinates`, where the new variable names are known.
 
-Лексикографічна оцінка враховує число кінцевих невідомих, операції
-Якобіана, операції залишків, розмір DAG, додаткові умови та простоту
-матриці. Якобіан використовується для метрики; числовий розв'язувач
-не запускається. Звіти пошуку — діагностичні дані, а не математична
-частина сертифіката або незалежний доказ оптимальності.
+The lexicographic score accounts for the final unknown count, Jacobian
+operations, residual operations, DAG size, additional conditions, and matrix
+simplicity. The Jacobian is used as a metric; no numerical solver runs.
+Search reports are diagnostic data rather than the mathematical part of a
+certificate or an independent optimality proof.
 
-## Реальний benchmark Lean
+## Actual Lean benchmark
 
 `benchmark_coordinates(system, best.search, max_candidates=3, lean=...)`
-повторно будує вибрані кандидати та вимірює генерацію джерела й справжню
-Lean-перевірку. Зберігаються час, статус, версії, хеші й кореляція
-Спірмена між оцінкою та часом успішних перевірок. Менше двох вимірювань
-або стала оцінка дають `None`, а не вигадане значення.
+rebuilds selected candidates and measures source generation and actual Lean
+verification. It records time, status, versions, hashes, and Spearman
+correlation between the score and the duration of successful checks.
+Fewer than two measurements or a constant score yield `None`, not an invented
+value.
 
 ```bash
 .venv/bin/python -m examples.coordinate_benchmark
 ```
 
-Час залежить від машини, кешу та запуску компілятора. Один локальний
-прогін трьох кандидатів дав кореляцію `-1.0`: це не підтверджує
-придатності оцінки як прогнозу часу. Алгоритм вибору не видає її за
-виміряний час чи універсально перевірену модель.
+Timing depends on the machine, cache, and compiler startup. One local run of
+three candidates gave correlation `-1.0`; this does not validate the score as
+a timing predictor. The selection algorithm does not present it as measured
+time or a universally validated model.
 
-## Регресії BJT
+## BJT regressions
 
-`examples.bjt43` задає карту
+`examples.bjt43` defines the chart
 $v_{bi}=u_{be}+e$, $v_{ci}=u_{be}-u_{bci}+e$, $v_{ei}=e$,
-$v_x=u_{be}-u_{bcx}+e$. За залежності функцій приладу від різниць
-напруг виключення $e$ залишає три невідомі.
+$v_x=u_{be}-u_{bcx}+e$. When device functions depend on voltage differences,
+eliminating $e$ leaves three unknowns.
 
-Команди `bjt43` і `bjt143` у `examples.run_formal` компілюють відповідно
-4 → 3 та весь перехід 14 → 3. Це структурні фікстури з довільними
-дійсними функціями, а не доказ фізичних законів конкретної моделі BJT.
-Базовий `bjt14` зі слабшими припущеннями надалі перевіряє 14 → 4.
+The `bjt43` and `bjt143` commands in `examples.run_formal` compile 4 → 3 and
+the full 14 → 3 transition, respectively. These are structural fixtures with
+arbitrary real functions, not proofs of the physical laws of a concrete BJT
+model. The base `bjt14` fixture retains weaker assumptions and checks 14 → 4.

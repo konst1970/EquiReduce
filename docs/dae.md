@@ -1,32 +1,32 @@
-# Диференціально-алгебраїчні системи
+# Differential-algebraic systems
 
-## Статус і ціль
+## Status and goal
 
-У `0.1.0.dev0` є окремий експериментальний API `DAESystem` / `reduce_dae`.
-Він підтримує описаний нижче напівявний клас із раціональною
-реконструкцією. Lean компілює двосторонню теорему про траєкторії
-на відкритому інтервалі та правило ланцюга через справжній `HasDerivAt`.
-Алгебраїчний `System.algebraic` надалі відхиляє похідні.
+`0.1.0.dev0` provides a separate experimental `DAESystem` / `reduce_dae` API.
+It supports the semi-explicit class described below with rational
+reconstruction. Lean compiles a bidirectional trajectory theorem on an open
+interval and the chain rule using actual `HasDerivAt` statements.
+Algebraic `System.algebraic` continues to reject derivatives.
 
-Додано окремий [неявний ДАЕ-конвеєр](implicit_dae.md) для DN-DAE-01–12:
-контракт, часовий адаптер, структуру, алгебраїчну редукцію без обернення
-масової матриці, повний Lean-доказ, початкові дані, пошук розбиття та
-часові координати й диференційовні зовнішні входи. Нижче описано саме напівявний API; окремий неявний
-контракт охоплює первинні MNA-рядки й композицію координатних карт.
+A separate [implicit DAE pipeline](implicit_dae.md) implements DN-DAE-01–12:
+the contract, time adapter, structure, algebraic reduction without mass matrix
+inversion, complete Lean proof, initial data, partition search, time-dependent
+coordinates, and differentiable prescribed inputs. This page describes the
+semi-explicit API; the separate implicit contract covers original MNA rows
+and composition of coordinate charts.
 
-Загальна постановка:
+General formulation:
 
 $$F(t,X(t),\dot X(t),p)=0.$$
 
-Параметри $p$ сталі в часі. Для змінного зовнішнього сигналу потрібне
-окреме оголошення функції та її регулярності; його не можна оголосити
-сталим параметром. Просте трактування $X$ і $\dot X$ як незалежних
-символів може допомогти аналізу структури, але не доводить відповідності
-траєкторій.
+Parameters $p$ are constant in time. A time-varying external signal requires
+a separate function declaration and regularity assumptions; it cannot be
+declared a constant parameter. Treating $X$ and $\dot X$ as independent
+symbols can help structural analysis but does not prove trajectory correspondence.
 
-## Перший підтримуваний клас
+## Initial supported class
 
-Поточна реалізація DAE обмежена напівявними системами
+The current semi-explicit DAE implementation is restricted to systems
 
 $$
 \begin{aligned}
@@ -35,114 +35,114 @@ $$
 \end{aligned}
 $$
 
-Алгебраїчний блок квадратний, точно афінний за $y$ та оборотний на
-заявленій області. Реконструкція має бути раціональною за $t,x,p$.
-Область задається точними предикатами й умовами ненульовості знаменників.
-У цій першій реалізації рівняння не
-містять $\dot y$, похідних другого порядку або імпульсних складових.
+The algebraic block is square, exactly affine in $y$, and invertible on the
+stated domain. Reconstruction must be rational in $t,x,p$. Exact predicates
+and nonzero denominator conditions specify the domain. In this initial
+implementation, equations contain no $\dot y$, second derivatives, or
+impulsive terms.
 
-За $\det A\ne0$:
+When $\det A\ne0$:
 
 $$y=\varphi(t,x,p),\qquad \dot x=f(t,x,\varphi(t,x,p),p).$$
 
-Невиродженість $\partial g/\partial y=A$ дає стандартну локальну
-структуру індексу 1. Бібліотека не повинна надавати цей висновок
-довільній DAE лише тому, що в ній знайдено якийсь афінний рядок.
+Nonsingularity of $\partial g/\partial y=A$ gives the standard local index-1
+structure. The library must not assign this conclusion to an arbitrary DAE
+merely because it contains some affine row.
 
-## Еквівалентність на інтервалі
+## Equivalence on an interval
 
-Для відкритого інтервалу $I$ треба довести:
+For an open interval $I$, prove:
 
-1. Якщо $(x(t),y(t))$ є допустимою класичною траєкторією вихідної DAE
-   на $I$, то $x(t)$ задовольняє скорочену систему.
-2. Якщо $x(t)$ задовольняє скорочену систему і всі умови редукції
-   виконуються для кожного $t\in I$, то
-   $y(t)=\varphi(t,x(t),p)$ відновлює допустиму вихідну траєкторію.
-3. Реконструкція зберігає потрібний клас регулярності й початкові умови.
+1. If $(x(t),y(t))$ is an admissible classical trajectory of the source DAE
+   on $I$, then $x(t)$ satisfies the reduced system.
+2. If $x(t)$ satisfies the reduced system and all reduction conditions hold
+   for every $t\in I$, then $y(t)=\varphi(t,x(t),p)$ reconstructs an
+   admissible source trajectory.
+3. Reconstruction preserves the required regularity class and initial conditions.
 
-Фактично реалізований контракт вимагає диференційовності $x,y$
-у кожній точці відкритого інтервалу. Формальний доказ відновлює
-диференційовність $y$ із раціональної формули та похідних $x$.
-Неперервність похідної як окрема властивість $C^1$ поки не є
-заявленим результатом бекенду. Це уточнення контракту ER-16–ER-18.
-Це доказ відповідності вже наявних розв'язків. Теореми існування,
-єдиності й продовження до межі інтервалу автоматично з нього не випливають.
+The implemented contract requires differentiability of $x,y$ at every point
+of the open interval. The formal proof derives differentiability of $y$
+from its rational formula and the derivatives of $x$. Continuity of the
+derivative as a separate $C^1$ property is not currently claimed by the
+backend. This refines the ER-16–ER-18 contract.
+This is a correspondence proof for existing solutions. Existence, uniqueness,
+and extension to interval boundaries do not follow automatically.
 
-Умова $\det A\ne0$ має виконуватися вздовж усієї траєкторії на $I$.
-Перевірка лише в початковий момент недостатня. При досягненні виродженої
-межі результат більше не обіцяє еквівалентності за її межами.
+The condition $\det A\ne0$ must hold along the entire trajectory on $I$.
+Checking only the initial time is insufficient. When a singular boundary is
+reached, the result no longer promises equivalence beyond it.
 
-## Реалізоване перенесення перших похідних
+## Implemented transport of first derivatives
 
-Для раціональної реконструкції обчислюється й доводиться правило ланцюга:
+For rational reconstruction, the chain rule is computed and proved:
 
 $$
 \dot y=\frac{\partial\varphi}{\partial t}
         +\frac{\partial\varphi}{\partial x}\dot x.
 $$
 
-Для $y=x^2$ це $\dot y=2x\dot x$.
-`result.reconstruction_derivatives` містить точні вирази з
-`Derivative(x(t), t)`. Теорема `reconstructed_rate_equivalence`
-підтверджує похідні довільної траєкторії $y$, яка збігається з
-реконструкцією на інтервалі. Для цього використовується локальна
-рівність функцій у відкритому околі, а не лише рівність в одній точці.
+For $y=x^2$, this gives $\dot y=2x\dot x$.
+`result.reconstruction_derivatives` contains exact expressions with
+`Derivative(x(t), t)`. The theorem `reconstructed_rate_equivalence` establishes
+the derivatives of an arbitrary trajectory $y$ agreeing with reconstruction
+on the interval. It uses local equality of functions on an open neighborhood,
+not equality at a single point.
 
-`result.substitute_reconstructed_rates(residuals)` повертає
-`RateSubstitution`: нові залишки, умови й ДАЕ-сертифікат графа.
-`verify_rate_substitution` незалежно перевіряє підстановку й області
-додаткових виразів до можливого скорочення полюсів. Це підстановка
-на доведеному графі; вона не перетворює нову довільну неявну систему
-на розв'язану ДАЕ. Вхід `semi_explicit` надалі не допускає похідних
-у правій частині або алгебраїчному блоці.
+`result.substitute_reconstructed_rates(residuals)` returns `RateSubstitution`:
+new residuals, conditions, and the DAE graph certificate.
+`verify_rate_substitution` independently checks substitution and the domains
+of additional expressions before possible pole cancellation. This is
+substitution on a proved graph; it does not solve a new arbitrary implicit
+DAE. The `semi_explicit` input still forbids derivatives in the right-hand
+side or algebraic block.
 
-Якщо $\varphi$
-залежить від $\dot x$, диференціювання породжує $\ddot x$; такі кроки
-не входять до підтримуваного класу й відхиляються.
+If $\varphi$ depends on $\dot x$, differentiation introduces $\ddot x$;
+such steps are outside the supported class and are rejected.
 
-При заміні диференціальних координат $X=M(t)U+c(t)$ необхідно врахувати
-$\dot X=M\dot U+\dot M U+\dot c$. Тому алгебраїчний сертифікат
-заміни координат не можна повторно використати як повний DAE-доказ.
+A differential coordinate change $X=M(t)U+c(t)$ must account for
+$\dot X=M\dot U+\dot M U+\dot c$. An algebraic coordinate certificate
+therefore cannot be reused as a complete DAE proof.
 
-## Початкові умови
+## Initial conditions
 
-Для заданих $t_0,x_0,y_0$ необхідно перевірити
+For specified $t_0,x_0,y_0$, check
 
 $$y_0=\varphi(t_0,x_0,p),\qquad g(t_0,x_0,y_0,p)=0.$$
 
-Невизначені початкові умови породжують символьні зобов'язання.
-Відомо несумісні умови відхиляються, а не «виправляються» бібліотекою.
-Якщо користувач не задав початкових даних, результат має зазначати, що
-доведено відповідність траєкторій без перевірки конкретної задачі Коші.
+Undetermined initial conditions produce symbolic obligations.
+Known inconsistent conditions are rejected rather than corrected by the
+library. If the user supplies no initial data, the result must state that
+trajectory correspondence was proved without checking a specific initial
+value problem.
 
-## Межі та контрприклади
+## Limits and counterexamples
 
-- **Високий індекс.** $\dot x-y=0$, $x=0$: з обмеження випливає
-  $\dot x=0$, отже $y=0$. Видалити $x=0$ після підстановки недостатньо.
-- **Неврахована гілка.** $y^2=x$: вибір $y=\sqrt x$ втрачає від'ємну
-  гілку, якщо користувач не обмежив $y\ge0$.
-- **Негладка реконструкція.** $y=|x|$: похідна не існує класично
-  при проходженні $x=0$ без додаткових умов.
-- **Неправильне диференціювання.** Диференціювання $x^2-1=0$ дає
-  $2x\dot x=0$, але останнє без початкового обмеження допускає
-  зайві сталі траєкторії.
+- **High index.** $\dot x-y=0$, $x=0$: the constraint implies $\dot x=0$,
+  hence $y=0$. Removing $x=0$ after substitution is insufficient.
+- **Missing branch.** $y^2=x$: selecting $y=\sqrt x$ loses the negative
+  branch unless the user restricts $y\ge0$.
+- **Nonsmooth reconstruction.** $y=|x|$: a classical derivative does not
+  exist when crossing $x=0$ without additional conditions.
+- **Incorrect differentiation.** Differentiating $x^2-1=0$ gives
+  $2x\dot x=0$, but the latter permits extra constant trajectories without
+  the original constraint.
 
-Не підтримуються нераціональна реконструкція, автоматичне зниження
-довільного індексу, перемикання
-гілок, події зі стрибками, розподільні розв'язки, PDE або наближене
-усунення швидких станів. Числовий інтегратор до бібліотеки не входить.
+This semi-explicit API does not support nonrational reconstruction, automatic
+reduction of arbitrary index, branch switching, jump events, distributional
+solutions, PDEs, or approximate elimination of fast states. The library
+contains no numerical integrator.
 
-## Вимоги до окремого DAE-сертифіката
+## Separate DAE certificate requirements
 
-Крім алгебраїчного журналу, потрібні незалежна змінна, розбиття станів,
-інтервал і область, припущення регулярності, похідні реконструкції,
-відповідність початкових даних та формальна теорема про траєкторії.
-`verify_dae_certificate` відтворює алгебраїчний журнал і незалежно
-переобчислює реконструкцію, праві частини, умови та перші похідні.
-JSON-артефакт зберігає справжні часові функції й похідні; під час
-завантаження перевіряються також початкові дані.
+Beyond the algebraic trace, record the independent variable, state partition,
+interval and domain, regularity assumptions, reconstruction derivatives,
+initial data correspondence, and formal trajectory theorem.
+`verify_dae_certificate` replays the algebraic trace and independently
+recomputes reconstruction, right-hand sides, conditions, and first derivatives.
+The JSON artifact retains actual time functions and derivatives; loading also
+checks initial data.
 
-## Виконуваний приклад
+## Executable example
 
 ```python
 import sympy as sp
@@ -160,18 +160,18 @@ assert result.reduced_residuals == (sp.diff(x,t) + x**2,)
 assert result.initial_check.status == "verified"
 ```
 
-Станові функції оголошуються з `real=True`; параметри — окремі сталі
-дійсні символи. Кінці інтервалу скінченні й точні. Для символьних кінців
-`system.interval_condition` є додатковим зобов'язанням непорожності.
-Lean-теорема містить цю передумову явно.
+State functions are declared with `real=True`; parameters are separate constant
+real symbols. Interval endpoints are finite and exact. For symbolic endpoints,
+`system.interval_condition` is an additional nonemptiness obligation.
+The Lean theorem includes this premise explicitly.
 
-Початкові дані, якщо задані, мають покривати всі стани, а час належати
-відкритому інтервалу. `initial_check` має стани `not_provided`, `verified`
-або `conditional` із залишковими символьними зобов'язаннями.
-Це точна символьна перевірка конкретних даних; формальна теорема про
-траєкторії застосовується до кожної точки інтервалу, зокрема початкової.
+When supplied, initial data must cover every state, with time inside the open
+interval. `initial_check` has status `not_provided`, `verified`, or `conditional`
+with remaining symbolic obligations. This is an exact symbolic check of specific
+data; the formal trajectory theorem applies at every interval point, including
+the initial point.
 
-Повний приклад із реальною компіляцією й артефактом:
+Complete example with actual compilation and an artifact:
 
 ```bash
 .venv/bin/python -m examples.dae_first_order

@@ -1,20 +1,20 @@
-# Приклади та очікувані результати
+# Examples and expected results
 
-Алгебраїчні фрагменти з `from equireduce ...` працюють у `0.1.0.dev0`.
-Фрагменти, що імпортують лише SymPy, можна виконувати вже зараз як
-перевірку математичних тотожностей. Вони не замінюють Lean-доказ.
+Algebraic snippets using `from equireduce ...` work in `0.1.0.dev0`.
+Snippets importing only SymPy can also run directly to check mathematical
+identities. They do not replace Lean proofs.
 
-## Алгебраїчне виключення
+## Algebraic elimination
 
-Вхід:
+Input:
 
 $$ay-x=0,\qquad y+x-1=0,\qquad a\ne0.$$
 
-За вибору $y$ для виключення:
+Selecting $y$ for elimination:
 
 $$H(x,a)=x/a+x-1=0,\qquad y=x/a.$$
 
-Цільове використання:
+Intended usage:
 
 ```python
 import sympy as sp
@@ -30,7 +30,7 @@ system = System.algebraic(
 result = reduce_system(system, candidates=(y,), proof="none")
 ```
 
-Незалежна пряма перевірка в SymPy:
+Independent forward check in SymPy:
 
 ```python
 import sympy as sp
@@ -42,75 +42,74 @@ expected = sp.Matrix([0, x/a + x - 1])
 assert (source.subs(reconstruction) - expected).applyfunc(sp.cancel).is_zero_matrix
 ```
 
-Цей код перевіряє тотожність після реконструкції. Зворотний напрямок
-потребує також вивести $y=x/a$ з початкового рядка за $a\ne0$;
-його повинен охоплювати сертифікат і теорема Lean.
+This code checks the identity after reconstruction. The reverse direction
+also needs to derive $y=x/a$ from the source row under $a\ne0$;
+the certificate and Lean theorem must cover it.
 
-## Вироджена гілка
+## Degenerate branch
 
-Для $ay-b=0$ результат $y=b/a$ обов'язково містить умову $a\ne0$.
-Якщо її не було на вході, `coverage` має бути `conditional`, доки
-не доведено покриття інших випадків. При $a=b=0$ змінна $y$ вільна.
+For $ay-b=0$, the result $y=b/a$ must include $a\ne0$.
+If that condition was absent from the input, `coverage` must be `conditional`
+until coverage of the remaining cases is proved. When $a=b=0$, $y$ is free.
 
-## Збереження нелінійного ядра
+## Preserving the nonlinear core
 
 $$y-x^2=0,\qquad \exp(y)+x-c=0.$$
 
-Редукція:
+Reduction:
 
 $$\exp(x^2)+x-c=0,\qquad y=x^2.$$
 
-Розв'язувати трансцендентне рівняння бібліотека не зобов'язана.
-Підстановка зберігає залежність експоненти від виключеної змінної.
-Для заданої користувачем функції $f(y)$ правило таке саме: $f(x^2)$,
-а не нова незалежна стала.
+The library need not solve the transcendental equation. Substitution preserves
+the exponential's dependence on the eliminated variable. A user-defined
+function $f(y)$ follows the same rule: $f(x^2)$, not a new independent constant.
 
-## Афінний блок
+## Affine block
 
 $$u+v-a=0,\qquad u-v-b=0,\qquad u^2+v-c=0.$$
 
-Перші два рядки мають визначник $-2$, тому
+The first two rows have determinant $-2$, so
 
 $$u=(a+b)/2,\qquad v=(a-b)/2.$$
 
-Залишається обмеження на параметри:
+A parameter constraint remains:
 
 $$((a+b)/2)^2+(a-b)/2-c=0.$$
 
-Нуль невідомих на виході не означає «всі рівняння виконані».
-Параметричний залишок не можна відкинути.
+Zero output unknowns does not mean that every equation holds.
+The parameter residual must not be discarded.
 
-## DAE без похідної виключеної змінної
+## DAE without a derivative of the eliminated variable
 
 $$\dot x+y=0,\qquad y-x^2=0.$$
 
-Реалізований API й виконуваний Lean-приклад наведено в [контракті ДАЕ](dae.md).
-Приклади 4 → 3 і 14 → 3 описані в [координатній редукції](coordinates.md).
+The implemented API and executable Lean example are in the [DAE contract](dae.md).
+The 4 → 3 and 14 → 3 examples are described in [coordinate reduction](coordinates.md).
 
-Очікуваний результат:
+Expected result:
 
 $$\dot x+x^2=0,\qquad y=x^2.$$
 
-Для початкових даних має виконуватися $y_0=x_0^2$.
-Еквівалентність встановлюється на інтервалі, де траєкторія допустима.
-Це реалізований експериментальний клас DAE.
+Initial data must satisfy $y_0=x_0^2$. Equivalence is established on an
+interval where the trajectory is admissible. This is an implemented
+experimental DAE class.
 
-## Підстановка похідної виключеної змінної
+## Substituting the eliminated variable's derivative
 
 $$\dot x+\dot y+y=0,\qquad y-x^2=0.$$
 
-За диференційовності $x$:
+When $x$ is differentiable:
 
 $$\dot y=2x\dot x,\qquad (1+2x)\dot x+x^2=0.$$
 
-Останній неявний залишок не потребує ділення на $1+2x$.
-Перехід до $\dot x=-x^2/(1+2x)$ потребує **нової** умови $1+2x\ne0$.
-Це різні перетворення з різними умовами допустимості.
-`substitute_reconstructed_rates` виконує таку підстановку на графі
-раціональної реконструкції й повертає умови. Вона не виконує наступного
-ділення або автоматичного розв'язання неявного рівняння за $\dot x$.
+The final implicit residual does not require division by $1+2x$.
+Writing $\dot x=-x^2/(1+2x)$ requires the **new** condition $1+2x\ne0$.
+These are different transformations with different validity conditions.
+`substitute_reconstructed_rates` performs this substitution on the rational
+reconstruction graph and returns conditions. It does not perform the subsequent
+division or automatically solve the implicit equation for $\dot x$.
 
-SymPy-перевірка правила ланцюга:
+SymPy chain-rule check:
 
 ```python
 import sympy as sp
@@ -123,13 +122,13 @@ expected = (1 + 2*x)*sp.diff(x, t) + x**2
 assert sp.expand(source_after_reconstruction - expected) == 0
 ```
 
-## Приклад для приймання міграції Dnipro
+## Dnipro migration acceptance example
 
-Структурна BJT-система 14 → 4 використовується як регресійний приклад.
-Після перенесення мають збігатися початкові 14 залишків, скорочені
-4 залишки, формули відновлення 10 змінних та умови ненульовості.
-Потрібна нова Lean-компіляція результату саме нового конвеєра;
-старий журнал не є автоматичним підтвердженням перенесеної реалізації.
+The structural BJT system 14 → 4 is a regression example. After extraction,
+the 14 source residuals, four reduced residuals, reconstruction formulas for
+10 variables, and nonzero conditions must agree. A new Lean compilation of
+the new pipeline's result is required; the old log does not automatically
+validate the extracted implementation.
 
-Для доведення незалежності від електроніки додаються окремі приклади
-кінематичного зв'язку та алгебраїчного балансу потоків без імпорту Dnipro.
+Separate kinematic-constraint and algebraic flow-balance examples are added
+without Dnipro imports to establish independence from electronics.

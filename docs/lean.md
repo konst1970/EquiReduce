@@ -1,153 +1,153 @@
-# Формальна перевірка в Lean 4
+# Formal verification in Lean 4
 
-## Роль бекенда
+## The backend's role
 
-SymPy конструює кандидат редукції. Lean перевіряє конкретну теорему,
-що пов'язує незмінний вхід, результат, умови й реконструкцію.
-Бібліотека не вважає власну SymPy-перевірку незалежним формальним доказом.
+SymPy constructs a reduction candidate. Lean checks a specific theorem linking
+the immutable input, result, conditions, and reconstruction. The library does
+not treat its own SymPy checks as an independent formal proof.
 
-Нелінійні функції можна залишати довільними функціями над дійсними
-числами, якщо структурне перетворення правильне для будь-якого їх вибору.
-Не можна оголошувати потрібну тотожність аксіомою або вилучати суттєву
-залежність від аргументів для спрощення теореми.
+Nonlinear functions may remain arbitrary functions over the real numbers if
+the structural transformation is valid for any choice of those functions.
+The required identity must not be declared as an axiom, nor may essential
+argument dependencies be removed to simplify the theorem.
 
-## Підтримувана мова виразів
+## Supported expression language
 
-У `0.1.0.dev0` працює мінімальний алгебраїчний піднабір: точні числа,
-дійсні символи, арифметика, цілі степені, умови й нерозкриті функції.
-`exp`, `log`, `sqrt`, `Abs`, `Min/Max` і `Piecewise` не заявлені як
-підтримувані формальним бекендом. Наявність старого коду їх друку
-у приватному експортері не обходить публічну перевірку можливостей.
+The baseline algebraic subset in `0.1.0.dev0` includes exact numbers, real
+symbols, arithmetic, integer powers, conditions, and opaque functions.
+The smooth extensions for `exp` and explicit `Piecewise` regions are described
+below. `log`, `sqrt`, `Abs`, and `Min/Max` are not claimed as formally supported.
+Legacy syntax-printing code in the private exporter does not bypass the
+public capability checks.
 
-Складений координатний доказ перевіряє обернену карту й усі вихідні
-рівняння, зокрема в регресії 14 → 3. Для експериментальних ДАЕ
-генеруються `algebraic_equivalence`, `reconstruction_chain_rule`,
-`reconstructed_rate_equivalence` і кінцева `reduction_equivalence`.
-Остання залежить від усіх потрібних попередніх теорем, тому контроль
-її аксіом охоплює і правило ланцюга. Похідні використовують
-Mathlib `HasDerivAt`; допустимість реконструйованої траєкторії
-виводиться з рівності функцій в околі точки відкритого інтервалу.
+The composed coordinate proof checks the inverse chart and all source
+equations, including the 14 → 3 regression. Experimental DAEs generate
+`algebraic_equivalence`, `reconstruction_chain_rule`,
+`reconstructed_rate_equivalence`, and the final `reduction_equivalence`.
+The last depends on all required preceding theorems, so its axiom audit also
+covers the chain rule. Derivatives use Mathlib `HasDerivAt`; admissibility
+of the reconstructed trajectory follows from equality of functions in a
+neighborhood of each point of the open interval.
 
-Неявний MNA-бекенд додатково доводить нормалізацію початкових
-складених раціональних похідних, відновлення областей і всіх вихідних
-рядків у `implicit_point_transport`, а потім двосторонню
-`reduction_equivalence`. Часові карти додають
-`augmented_trajectory_equivalence` і зовнішню теорему з існуванням
-координатних траєкторій та похідними оберненої карти. Контроль аксіом
-виконується для кінцевої теореми, що залежить від усієї композиції.
+The implicit MNA backend additionally proves normalization of source composite
+rational derivatives, recovery of domains, and all source rows in
+`implicit_point_transport`, followed by bidirectional `reduction_equivalence`.
+Time-dependent charts add `augmented_trajectory_equivalence` and an outer
+theorem with existence of coordinate trajectories and derivatives of the
+inverse chart. The axiom audit covers the final theorem, which depends on
+the entire composition.
 
-Зовнішні входи не є скалярами чи новими шуканими станами. Вони
-передаються окремими функціями `ℝ → ℝ`; `hInputRegularity` задає їхню
-диференційовність на інтервалі. Їхні `deriv` та `HasDerivAt` беруть
-участь у реконструкції й нормалізації складених похідних. Ця гіпотеза
-зберігається у кінцевій теоремі часової карти.
+Prescribed inputs are neither scalar parameters nor new unknown states.
+They are supplied as separate `ℝ → ℝ` functions; `hInputRegularity` specifies
+differentiability on the interval. Their `deriv` and `HasDerivAt` participate
+in reconstruction and composite derivative normalization. This hypothesis
+is retained in the final time-chart theorem.
 
-В умовах алгебраїчного експорту використовуються точні правила,
-включно з множинами ненульових множників знаменників. `Expr.equals`
-і стандартне `Relational.simplify` з можливими числовими пробами
-не використовуються в цьому шляху.
+Algebraic condition export uses exact rules, including sets of nonzero
+denominator factors. This path does not use `Expr.equals` or standard
+`Relational.simplify`, which may perform numerical probing.
 
-Для оголошених двозмінних зарядових законів є явна гіпотеза
-`HasFDerivAt` із лінійним відображенням, складеним з обох частинних
-похідних. Композиція з парою траєкторій доводиться теоремами Mathlib,
-без додаткових аксіом. Для конкретної експоненти застосовується
-`HasDerivAt.exp` і точні тотожності `Real.exp_add/sub/neg`.
-Результат для оголошеного закону умовний щодо його контракту;
-окремі тести конкретного BJT використовують його фактичні формули
-й не містять `hSmooth` для підміни фізичної моделі.
+Declared two-variable charge laws have an explicit `HasFDerivAt` hypothesis
+with a linear map constructed from both partial derivatives. Composition with
+a pair of trajectories is proved using Mathlib theorems without additional
+axioms. Concrete exponentials use `HasDerivAt.exp` and exact
+`Real.exp_add/sub/neg` identities. A result for a declared law is conditional
+on its contract; separate concrete BJT tests use its actual formulas and do
+not use `hSmooth` to stand in for the physical model.
 
-Гілки `Piecewise` залишаються в початковому формальному твердженні.
-Їхні строгі області припускаються на всьому інтервалі; рівність із
-вибраною формулою в околі точки дає похідну початкової функції.
-Баланс трьох термінальних зарядів та їх похідних має реальні докази.
+`Piecewise` branches remain in the source formal statement. Their strict
+regions are assumed throughout the interval; equality with the selected
+formula near a point yields the derivative of the source function.
+The three terminal charge balance and its derivative balance have actual proofs.
 
-Для першого формального бекенда потрібно поетапно заявляти й реально
-тестувати: дійсні символи, точні цілі й раціональні числа, арифметику,
-цілі степені, рівності, нерівності умов та довільні оголошені функції.
-Окремими групами додаються `exp`, `log`, `sqrt`, `Abs`, `Min/Max` і
-`Piecewise`. Підтримка друку синтаксису не означає підтримки доведення
-будь-якого перетворення з відповідною функцією.
+Formal backend support must be declared and tested incrementally: real symbols,
+exact integers and rationals, arithmetic, integer powers, equalities, condition
+inequalities, and arbitrary declared functions. Extensions for `exp`, `log`,
+`sqrt`, `Abs`, `Min/Max`, and `Piecewise` form separate groups. Printing the
+syntax does not mean that every transformation involving that function can
+be proved.
 
-Правила перекладу повинні фіксувати:
+Translation rules must specify:
 
-- області визначення та гілки коренів і степенів;
-- порядок `Piecewise`, включно з останньою гілкою й межами;
-- двійкове згортання `Min/Max` із довільним числом аргументів;
-- припущення про функції та їхню арність;
-- однозначне відображення імен без колізій із ключовими словами Lean;
-- відмову для непідтримуваного вузла без підстановки нуля чи «схожого» виразу.
+- Domains and branches of roots and powers.
+- `Piecewise` order, including the final branch and boundaries.
+- Binary folding of `Min/Max` with arbitrary argument counts.
+- Function assumptions and arities.
+- Unambiguous name mapping without collisions with Lean keywords.
+- Rejection of unsupported nodes without substituting zero or a similar-looking expression.
 
-Звичайні похідні та теореми про траєкторії належать окремому DAE-бекенду.
-Вони не експортуються як незалежні скалярні змінні для заяви про повний доказ.
+Ordinary derivatives and trajectory theorems belong to the separate DAE
+backend. They are not exported as independent scalar variables to claim a
+complete proof.
 
-## Форма теорем
+## Theorem structure
 
-Для одиничного кроку доводиться еквівалентність початкового набору
-рівнянь і нового набору разом із формулою виключення. Для координатного
-відображення — існування й однозначність відповідних координат за
-невиродженості карти. Підсумковий доказ компонування повинен посилатися
-на точні вихідні й кінцеві залишки.
+A scalar step proves equivalence between the source equation set and the
+new set together with the elimination formula. A coordinate map proves
+existence and uniqueness of the corresponding coordinates under chart
+invertibility. The final composition proof must refer to the exact source
+and final residuals.
 
-Обмеження області входять у гіпотези або відповідні предикати теореми.
-Доказ лише прямої підстановки не є повним двостороннім сертифікатом.
-Факт відсутності розв'язків або існування хоча б одного розв'язку
-потребує окремого твердження.
+Domain restrictions appear as hypotheses or corresponding theorem predicates.
+A proof of only forward substitution is not a complete bidirectional
+certificate. Absence of solutions or existence of at least one solution
+requires a separate statement.
 
-## Процедура компіляції
+## Compilation procedure
 
-1. Звірити версії Lean/Mathlib з конфігурацією.
-2. Згенерувати самодостатнє джерело з точним твердженням і доказом.
-3. Зберегти хеш джерела й зіставлення об'єктів SymPy з іменами Lean.
-4. Скомпілювати в окремому каталозі з `-DwarningAsError=true`.
-5. Перевірити код завершення, діагностику й список аксіом теореми.
-6. Звірити, що перевірялося саме зафіксоване джерело з потрібним входом.
-7. Записати команду, журнали, версії, умови та результат перевірки.
+1. Check Lean/Mathlib versions against the configuration.
+2. Generate self-contained source with the exact statement and proof.
+3. Record the source hash and the mapping from SymPy objects to Lean names.
+4. Compile in a separate directory with `-DwarningAsError=true`.
+5. Check the exit code, diagnostics, and theorem axiom list.
+6. Confirm that the recorded source with the required input was checked.
+7. Record the command, logs, versions, conditions, and verification result.
 
-Команда задається списком аргументів, `shell=False`, із лімітом часу.
-Немає автоматичного встановлення інструментів, запуску довільного коду
-з артефакту або мережевої операції під час самої перевірки.
+The command is an argument list, with `shell=False` and a time limit.
+Verification itself does not automatically install tools, execute arbitrary
+artifact code, or perform network operations.
 
-Перший закріплений набір для порівняння з Dnipro: Lean 4.36.0,
-Mathlib v4.36.0, ревізія `fc4f59e577feb1a4956671bc04ac18aaaf8cd842`.
-Це вихідна база сумісності, а не обіцянка роботи з усіма версіями Mathlib.
-Зміна toolchain потребує повторних формальних тестів.
+The initial pinned environment for comparison with Dnipro is Lean 4.36.0,
+Mathlib v4.36.0, revision `fc4f59e577feb1a4956671bc04ac18aaaf8cd842`.
+This is a compatibility baseline, not a promise of support for every Mathlib
+version. Toolchain changes require formal regression tests.
 
-## Статуси
+## Statuses
 
-| Статус | Значення |
+| Status | Meaning |
 |---|---|
-| `not_requested` | Формальна перевірка не запитувалась |
-| `generated` | Є джерело, але немає підтвердженої компіляції |
-| `verified` | Компіляція і перевірка аксіом завершилися успішно |
-| `failed` | Lean відхилив доказ або виявлено неприпустимі залежності |
-| `unavailable` | Немає потрібного інструмента чи підготовлених залежностей |
-| `unsupported` | Перетворення або вираз поза підтримуваним класом |
-| `timeout` | Перевірку зупинено через ліміт часу |
+| `not_requested` | Formal verification was not requested |
+| `generated` | Source exists without confirmed compilation |
+| `verified` | Compilation and axiom auditing succeeded |
+| `failed` | Lean rejected the proof or forbidden dependencies were found |
+| `unavailable` | Required tools or prepared dependencies are missing |
+| `unsupported` | Transformation or expression is outside the supported class |
+| `timeout` | Verification was stopped at the time limit |
 
-Жоден статус, крім `verified`, не дозволяє позначити результат як
-Lean-перевірений. Збої не замінюються успішною SymPy-перевіркою.
+Only `verified` permits a result to be described as Lean-verified.
+Failures are not replaced by successful SymPy checks.
 
-## Аксіоми та довірена межа
+## Axioms and the trusted boundary
 
-Для першої конфігурації дозволений лише піднабір стандартних
-`propext`, `Classical.choice`, `Quot.sound`. `sorryAx`, `sorry`,
-`admit` і додаткові предметні аксіоми не допускаються.
-Конкретний перелік залежностей отримується від Lean для цільової теореми.
-Текстовий пошук слова `sorry` корисний як попередня перевірка,
-але не замінює компіляцію й аналіз залежностей.
+The initial configuration allows only a subset of the standard axioms
+`propext`, `Classical.choice`, and `Quot.sound`. `sorryAx`, `sorry`,
+`admit`, and additional application-specific axioms are forbidden.
+The actual dependency list is obtained from Lean for the target theorem.
+Searching the source for `sorry` is useful as a preliminary check, but does
+not replace compilation and dependency analysis.
 
-Довірена межа включає Lean/kernel, імпортовану Mathlib, коректність
-експортера SymPy → Lean та відповідність переданих рівнянь задачі.
-Хеші в протоколі захищають зіставлення файлів від випадкового змішування,
-але не є математичним доказом і не засвідчують авторство.
+The trusted boundary includes Lean/kernel, imported Mathlib, correctness of
+the SymPy → Lean exporter, and correspondence between the supplied equations
+and the problem. Run-report hashes prevent accidental file mismatches, but
+are neither mathematical proofs nor evidence of authorship.
 
-## Тести й кеш
+## Tests and caching
 
-Модульні тести runner можуть підміняти процес, щоб перевірити помилки
-й тайм-аути. Вони не є доказами. Окрема інтеграційна група обов'язково
-компілює реальні теореми та відхиляє навмисно зіпсовані формули.
+Runner unit tests may mock the process to exercise errors and timeouts.
+They are not proofs. A separate integration group must compile actual
+theorems and reject deliberately corrupted formulas.
 
-Ключ кешу містить вихідну систему, умови, сертифікат, джерело Lean,
-версію експортера, toolchain і ревізії залежностей. Зміна будь-якої
-з цих складових робить старий успіх непридатним для нового результату.
-Повторне використання кешу відображається в протоколі.
+The cache key contains the source system, conditions, certificate, Lean source,
+exporter version, toolchain, and dependency revisions. Changing any component
+invalidates the old success for the new result. Cache reuse is recorded in
+the run report.

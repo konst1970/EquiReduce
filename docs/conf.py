@@ -3,7 +3,7 @@
 project = "EquiReduce"
 author = "EquiReduce contributors"
 release = "0.1.0.dev0"
-language = "uk"
+language = "en"
 extensions = [
     "myst_parser",
     "sphinx.ext.mathjax",
@@ -17,5 +17,5 @@ exclude_patterns = ["_build", "requirements.txt"]
 nitpicky = True
 myst_enable_extensions = ["dollarmath", "colon_fence"]
 html_theme = "alabaster"
-html_title = "EquiReduce — проєктна документація"
-html_theme_options = {"description": "SymPy → точна редукція → Lean"}
+html_title = "EquiReduce — design documentation"
+html_theme_options = {"description": "SymPy → exact reduction → Lean"}

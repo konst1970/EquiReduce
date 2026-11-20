@@ -1,100 +1,98 @@
-# Сертифікати, серіалізація й аудит
+# Certificates, serialization, and auditing
 
-## Три різні об'єкти
+## Three distinct objects
 
-1. **Сертифікат редукції** — математичні дані для перевірки перетворення.
-2. **Lean-джерело** — конкретне формальне твердження та його доказ.
-3. **Протокол запуску** — що, коли, якою командою й версією перевірялося.
+1. **Reduction certificate** — mathematical data for checking the transformation.
+2. **Lean source** — a specific formal statement and its proof.
+3. **Run report** — what was checked, when, with which command and version.
 
-Успішний протокол без відповідного джерела та входу недостатній для
-відтворення. Сертифікат без компіляції має лише символьний рівень перевірки.
+A successful run report without the corresponding source and input is
+insufficient for reproduction. A certificate without compilation has only
+symbolic verification.
 
-## Вміст сертифіката
+## Certificate contents
 
-- Початкові залишки, порядок координат, параметри та область визначення.
-- Кінцеві залишки, карти координат та реконструкція у вихідному порядку.
-- Вхідні й додаткові умови з походженням і статусом покриття гілок.
-- Кожен крок: тип, індекси рядків, опорні коефіцієнти, підстановка,
-  зобов'язання невиродженості й зв'язок із наступними залишками.
-- За наявності — матриці двосторонніх лінійних комбінацій рядків.
-- Версія алгоритму та схема серіалізації.
+- Source residuals, coordinate order, parameters, and domain of definition.
+- Final residuals, coordinate maps, and reconstruction in source order.
+- Input and additional conditions with provenance and branch coverage status.
+- Each step: type, row indices, pivot coefficients, substitution, invertibility
+  obligations, and connection to subsequent residuals.
+- Bidirectional linear row-combination matrices, when available.
+- Algorithm version and serialization schema.
 
-Необов'язкові відомості пошуку не повинні впливати на математичну
-істинність сертифіката. Перевірка приймає готовий кандидат без повторного
-пошуку найкращого.
+Optional search information must not affect mathematical certificate validity.
+Verification accepts a completed candidate without searching again for the best one.
 
-## Безпечний формат SymPy
+## Safe SymPy format
 
-Публічний переносний формат — JSON із версійованим деревом виразів.
-Рядки `str(expr)` і `srepr(expr)` можна додавати для читання, але вони
-не є єдиним відновлюваним представленням.
+The public portable format is JSON with a versioned expression tree.
+`str(expr)` and `srepr(expr)` may be included for readability, but are not
+the sole reconstructible representation.
 
-Декодер підтримує лише явний перелік вузлів: символ, ціле, раціональне,
-сума, добуток, підтримуваний степінь, функція з реєстру, предикат і
-підтримуване умовне розгалуження. DAE-вузли додаються окремою версією
-можливостей із перевіркою порядку та незалежної змінної.
+The decoder supports only an explicit list of nodes: symbol, integer, rational,
+sum, product, supported power, registered function, predicate, and supported
+conditional branch. DAE nodes are added through a separate capability version
+with derivative order and independent-variable checks.
 
-Приклад вузла раціонального числа:
+Example rational-number node:
 
 ```json
 {"type": "Rational", "numerator": "1", "denominator": "3"}
 ```
 
-Чисельник і знаменник кодуються десятковими рядками довільної точності.
-Символи мають стабільні ID та припущення: дві змінні з однаковим
-друкованим ім'ям, але різними припущеннями не можна зливати.
-Імена й арність невизначених функцій зберігаються в окремому реєстрі.
+Numerators and denominators are encoded as arbitrary-precision decimal strings.
+Symbols have stable IDs and assumptions: two variables with the same printed
+name but different assumptions must not be merged. Undefined function names
+and arities are stored in a separate registry.
 
-`pickle`, `eval`, `exec` або необмежений `sympify` на тексті артефакту
-для публічного завантаження не використовуються. Декодер обмежує
-глибину дерева, число вузлів, розміри матриць і чисел; невідомий вузол
-або новішу несумісну схему відхиляє з `ArtifactError`.
+Public loading does not use `pickle`, `eval`, `exec`, or unrestricted `sympify`
+on artifact text. The decoder bounds tree depth, node count, matrix dimensions,
+and numeric sizes; unknown nodes or newer incompatible schemas are rejected
+with `ArtifactError`.
 
-## Схема контейнера
+## Container schema
 
-Ідентифікатор початкової схеми: `equireduce.reduction/v1`.
-Реалізований контейнер має такі поля:
+The initial schema identifier is `equireduce.reduction/v1`.
+The implemented container has these fields:
 
-| Розділ | Дані |
+| Section | Data |
 |---|---|
 | `schema` | `equireduce.reduction/v1` |
-| `payload` | Типізований AST повного `ReductionResult` |
-| `sha256` | Контрольна сума всього payload, включно з протоколом |
-| `mathematical_sha256` | Окремий стабільний хеш математичного сертифіката |
-| `versions` | Python, SymPy, EquiReduce та версія експортера |
+| `payload` | Typed AST of the complete `ReductionResult` |
+| `sha256` | Checksum of the entire payload, including the run report |
+| `mathematical_sha256` | Separate stable hash of the mathematical certificate |
+| `versions` | Python, SymPy, EquiReduce, and exporter version |
 
-Усередині `payload` зберігаються `source`, `reduced_system`, умови,
-реконструкція, `certificate`, `symbolic_check` і `formal_check`.
-Останній містить також версію Lean, ревізію Mathlib, команду,
-UTC-мітку, тривалість, код завершення та журнал.
-Після завантаження `formal_check.origin="recorded"`.
+`payload` stores `source`, `reduced_system`, conditions, reconstruction,
+`certificate`, `symbolic_check`, and `formal_check`. The last of these also
+contains the Lean version, Mathlib revision, command, UTC timestamp, duration,
+exit code, and log. After loading, `formal_check.origin="recorded"`.
 
-Машинна схема реалізована в
-`src/equireduce/resources/artifact-v1.schema.json` і тестується валідатором
-JSON Schema 2020-12. Перевірка форми доповнюється повторною перевіркою
-сертифіката, області, реконструкції та метаданих покриття під час завантаження.
+The machine-readable schema is implemented in
+`src/equireduce/resources/artifact-v1.schema.json` and tested with a JSON Schema
+2020-12 validator. Shape validation is supplemented by certificate, domain,
+reconstruction, and coverage metadata checks during loading.
 
-## Канонізація й хеші
+## Canonicalization and hashes
 
-Для стабільного змісту застосовується UTF-8 JSON зі сталим порядком
-ключів об'єктів, фіксованими роздільниками та збереженням порядку масивів.
-Імена символів не нормалізуються зі зміною їхньої ідентичності.
-NaN і нескінченні JSON-числа не допускаються.
+Stable content uses UTF-8 JSON with fixed object key order and separators,
+preserving array order. Symbol names are not normalized in a way that changes
+their identity. NaN and infinite JSON numbers are not allowed.
 
-Час виконання, абсолютні локальні шляхи й машинні характеристики
-не входять до стабільного математичного хешу. Вони зберігаються в
-окремому протоколі, який за потреби також має власний хеш.
+Runtime, absolute local paths, and machine characteristics are excluded from
+the stable mathematical hash. They are retained in a separate run report,
+which can also have its own hash.
 
-У `v1` це розрізнення реалізовано полями `mathematical_sha256` та
-`sha256`: друге навмисно змінюється при зміні протоколу запуску.
+In `v1`, this distinction uses `mathematical_sha256` and `sha256`:
+the latter intentionally changes when the run report changes.
 
-SHA-256 виявляє зміну змісту, але не є підписом автора й не доводить
-коректності. Навіть артефакт із правильним хешем потребує перевірки
-сертифіката або повторної Lean-компіляції для відповідного рівня довіри.
+SHA-256 detects content changes but is neither an author signature nor a
+correctness proof. Even an artifact with a matching hash needs certificate
+verification or fresh Lean compilation for the corresponding trust level.
 
-## Комплект для відтворення
+## Reproduction bundle
 
-Реалізований експорт папки:
+The implemented directory export contains:
 
 ```text
 artifact.json
@@ -107,50 +105,49 @@ lake-manifest.json
 README.md
 ```
 
-Завантажені залежності `.lake`, тимчасові файли й локальне Python-оточення
-до комплекту не входять. Інструкція має розрізняти початкове завантаження
-залежностей і повторну перевірку в уже підготовленому середовищі.
+Downloaded `.lake` dependencies, temporary files, and the local Python
+environment are excluded. Instructions must distinguish initial dependency
+download from repeat verification in an already prepared environment.
 
-Для DAE комплект додатково зберігає область часу, регулярність,
-реконструкцію похідних і обробку початкових даних. Алгебраїчний протокол
-не може замінити ці відомості.
+For DAEs, the bundle additionally retains the time domain, regularity,
+derivative reconstruction, and initial data handling. An algebraic run report
+cannot replace this information.
 
-У поточній схемі коренем є `Result` або `DAEResult`. Складені
-координатні сертифікати зберігають обидві карти й внутрішній журнал.
-Напівявний контракт використовує перші похідні оголошених станів.
-Завантаження ДАЕ повторно обчислює також
-праві частини, похідні реконструкції та статус початкових даних.
-Змінилася схема версії розробки; сумісність із довільними старими
-експериментальними файлами не є обіцянкою стабільного релізу.
+The current schema root is `Result` or `DAEResult`. Composed coordinate
+certificates retain both maps and the inner trace. The semi-explicit contract
+uses first derivatives of declared states. DAE loading also recomputes right-hand
+sides, reconstruction derivatives, and initial data status. The development
+schema has changed; compatibility with arbitrary old experimental files is
+not a stable-release promise.
 
-## Неявні ДАЕ: окремий простір схеми
+## Implicit DAEs: a separate schema namespace
 
-Для нового конвеєра використовується `equireduce.implicit/v1` та
-`artifact-implicit-v1.schema.json`, з коренем `ImplicitResult`.
-В AST підтримано перші похідні складених зарядових виразів, явні
-пари `Piecewise`, декларації гладких законів, нормалізацію, масову
-матрицю й звіт рангу, обидві часові карти, початкові зразки входів,
-джерельні індекси рядків і звіт вибору розбиття.
+The new pipeline uses `equireduce.implicit/v1` and
+`artifact-implicit-v1.schema.json`, with root `ImplicitResult`.
+The AST supports first derivatives of composite charge expressions, explicit
+`Piecewise` pairs, smooth law declarations, normalization, the mass matrix
+and rank report, both time-dependent maps, initial input samples, source row
+indices, and the partition selection report.
 
-Завантаження:
+Loading:
 
-1. Перевіряє версію, розмір, структурні обмеження й обидва хеші.
-2. Незалежно перевіряє сертифікат, правило ланцюга, гілки та області.
-3. Відтворює всі математичні поля результату без повторного виключення.
-4. Повторно перевіряє початкові значення, пропущені входи та зобов'язання.
-5. Звіряє звіт пошуку з його оголошеною скінченною сім'єю та кандидатами.
-6. Перевіряє чисте перейменування початкових позначень, якщо є `provenance`.
-7. Звіряє джерело Lean й хеш, зберігає протокол як `recorded`.
+1. Checks the version, size, structural limits, and both hashes.
+2. Independently verifies the certificate, chain rule, branches, and domains.
+3. Reconstructs every mathematical result field without repeating elimination.
+4. Rechecks initial values, missing inputs, and obligations.
+5. Checks the search report against its declared finite family and candidates.
+6. Verifies the pure renaming of source labels when `provenance` is present.
+7. Checks the Lean source and hash, retaining the run report as `recorded`.
 
-Зміна покриття, рівнянь, похідних, рангу, початкового статусу чи
-джерельних позначень відхиляється навіть із перерахованим загальним
-SHA-256. Походження підтверджує відповідність знімка математичному
-входу, а не авторство або фізичну правильність моделі.
+Changes to coverage, equations, derivatives, rank, initial status, or source
+labels are rejected even with a recomputed overall SHA-256.
+Provenance confirms correspondence between the snapshot and mathematical
+input, not authorship or physical correctness of the model.
 
-Межі відновлення: JSON до 2 MB, до 100000 вузлів AST, глибина до 64,
-до 512 записаних кандидатів пошуку та бюджет рангу до 4096 мінорів.
-Невідомі записи, теги, функції-оператори й надмірні степені відхиляються.
-Довільні рядки ніколи не парсяться як SymPy/Python-код.
+Replay limits: JSON up to 2 MB, up to 100000 AST nodes, depth up to 64,
+up to 512 recorded search candidates, and a rank budget of up to 4096 minors.
+Unknown records, tags, operator functions, and excessive powers are rejected.
+Arbitrary strings are never parsed as SymPy/Python code.
 
-`artifact_document(result)` у модулі `equireduce.artifacts` повертає
-той самий повний AST для JSON-виводу CLI без проміжного файлу.
+`artifact_document(result)` in `equireduce.artifacts` returns the same complete
+AST for CLI JSON output without an intermediate file.

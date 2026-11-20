@@ -1,256 +1,254 @@
-# Детальний план реалізації EquiReduce
+# Detailed EquiReduce implementation plan
 
-Дата: 19.11.2026. Статус: виконується за TDD.
+Date: 2026-11-19. Status: implementation follows TDD.
 
-Цей документ перетворює [дорожню карту](roadmap.md) на послідовність
-перевірюваних задач. Поточні стани ER-задач і докази перевірок
-винесено до [звіту виконання](progress.md). Прототипи Dnipro використовуються
-як вихідні матеріали, а не як уже завершена незалежна бібліотека.
+This document turns the [roadmap](roadmap.md) into a sequence of verifiable
+tasks. Current ER task statuses and validation evidence are kept in the
+[progress report](progress.md). Dnipro prototypes are source material,
+not an already completed independent library.
 
-## 1. Очікуваний результат
+## 1. Expected result
 
-Перший реліз `0.1.0` має надавати незалежний Python-пакет, який:
+The first `0.1.0` release must provide an independent Python package that:
 
-1. Приймає алгебраїчну систему, невідомі, параметри й умови як об'єкти SymPy.
-2. Виконує точне одиничне та блокове афінне виключення.
-3. Повертає скорочену систему, повну реконструкцію та явні обмеження.
-4. Незалежно перевіряє сертифікат і за запитом запускає Lean.
-5. Експортує відтворюваний комплект доказу та встановлюється з wheel.
+1. Accepts an algebraic system, unknowns, parameters, and conditions as SymPy objects.
+2. Performs exact scalar and block affine elimination.
+3. Returns a reduced system, full reconstruction, and explicit restrictions.
+4. Independently verifies the certificate and runs Lean when requested.
+5. Exports a reproducible proof bundle and can be installed from a wheel.
 
-Похідні у `System.algebraic` відхиляються. DAE мають окремий експериментальний
-API й власні теореми про траєкторії. Повний автоматичний пошук
-координат не є передумовою першого релізу.
+`System.algebraic` rejects derivatives. DAEs have a separate experimental API
+and their own trajectory theorems. Fully automatic coordinate search is not
+a prerequisite for the first release.
 
-## 2. Порядок і залежності
+## 2. Order and dependencies
 
-Основна послідовність:
-
-```text
-M0: зафіксувати контракт
-  ↓
-M1: незалежне алгебраїчне ядро
-  ↓
-M2: справжній Lean-доказ + артефакти + реліз 0.1.0
-  ↓
-M3: координати, пошук, адаптер Dnipro
-  ↓
-M4: напівявні DAE індексу 1
-  ↓
-M5: похідні виключених змінних та інші розширення
-```
-
-Усередині M2 треба спочатку довести до реальної Lean-компіляції
-невеликий наскрізний приклад, а потім розширювати експортер і формат
-артефактів. Дослідницьку перевірку найпростішої DAE-теореми можна
-провести вже після цього прикладу, щоб рано оцінити складність M4.
-Вона не змінює обсяг першого релізу.
-
-## 3. M0 — підготовка до перенесення
-
-Перед початком кодування:
-
-- Зафіксувати початковий контракт API й мінімальний піднабір SymPy.
-- Скласти відповідність модулів Dnipro новим модулям EquiReduce.
-- Зберегти точні вхідні дані, умови та очікувані результати регресій.
-- Встановити походження коду й матеріалів та умови їх перенесення.
-- Відокремити прийняття технічного результату від публікації пакета:
-  ліцензія, доступність імені та реквізити релізу остаточно вирішуються
-  до зовнішнього випуску, а не підміняються припущеннями.
-
-Для кожної наступної задачі використовується стан `todo`, `in_progress`,
-`blocked` або `done`. Причина блокування й докази завершення
-зберігаються разом із задачею. Початковий стан усіх ER-задач був `todo`;
-актуальні стани ведуться у звіті, а не визначаються наявністю опису в плані.
-
-## 4. M1 — незалежне алгебраїчне ядро
-
-| ID | Робота | Залежить від | Критерій завершення |
-|---|---|---|---|
-| ER-01 | Каркас пакета: `pyproject.toml`, `src/equireduce`, винятки, `py.typed`, тести й CI | M0 | Wheel встановлюється в чисте оточення; імпорт не потребує Dnipro або Lean |
-| ER-02 | Незмінний тип `System`, точні залишки, невідомі, параметри й валідація | ER-01 | Є тести порожнього, прямокутного й некоректного входу; похідні явно відхиляються |
-| ER-03 | Умови, області визначення, тристатусні перевірки та покриття | ER-02 | Ділення не втрачає виключених нулів; невідоме не перетворюється на доведене |
-| ER-04 | Одиничне афінне виключення й композиція реконструкції | ER-03 | Виключаються кілька змінних без циклів; усі умови перенесено в кінцеві координати |
-| ER-05 | Сертифікат, незалежний перевіряльник, `ReductionResult` і `reduce_system` | ER-04 | Неправильний крок відхиляється; коректний результат містить повну реконструкцію |
-| ER-06 | Точне блокове виключення | ER-05 | Оборотний блок скорочується; вироджений і невизначений не видаються за оборотні |
-
-### ER-01 — мінімальний каркас
-
-Створити лише потрібні модулі, без порожніх DAE-реалізацій. Налаштувати
-Ruff, перевірку типів і pytest. Перші публічні експорти обмежити
-узгодженим API, щоб перенесення внутрішніх функцій не зробило їх
-ненавмисно стабільними зовнішніми інтерфейсами.
-
-### ER-02 та ER-03 — дані перед алгоритмами
-
-Перевіряти порядок і унікальність невідомих, оголошення всіх параметрів,
-дійсну область, точні числа та відсутність непідтримуваних вузлів.
-Вхід зберігати до перетворень; `Float` за замовчуванням відхиляти.
-
-Відокремити вхідні припущення від доданих умов. Для `ay-b=0` не
-позначати реконструкцію `y=b/a` глобальною без обґрунтування гілки
-`a=0`. Статуси узгодженості умов, покриття розв'язків і повноти пошуку
-мають бути незалежними.
-
-### ER-04 та ER-05 — перший математичний результат
-
-Перший приклад: `ay-x=0`, `y+x-1=0`, `a != 0`; виключити `y`.
-Другий: `y-x**2=0`, `f(y)+x-c=0`; зберегти точний аргумент `f(x**2)`.
-Перевіряльник отримує знімок вихідної системи й готовий сертифікат;
-він не довіряє прапорцю, який виставив редуктор.
-
-### ER-06 — розширення до блоків
-
-Почати з точних квадратних блоків. Додати випадки з параметричним
-визначником, збереженими нелінійними рівняннями й нулем невідомих
-на виході, коли залишаються обмеження на параметри.
-
-**Вихід M1:** SymPy → перевірена символьна редукція → SymPy,
-без заяви про формальний доказ Lean.
-
-## 5. M2 — Lean, аудит і перший реліз
-
-| ID | Робота | Залежить від | Критерій завершення |
-|---|---|---|---|
-| ER-07 | Закріпити окреме середовище Lean/Mathlib | ER-01 | Чисте підготовлене середовище компілює контрольну теорему з відомими версіями |
-| ER-08 | Експортер мінімальної мови SymPy | ER-03, ER-07 | Точні числа, символи, арифметика, умови й оголошені функції перекладаються без втрати змісту |
-| ER-09 | Теореми одиничного, послідовного та блокового виключення | ER-05, ER-08; блоки після ER-06 | Реальний Lean підтверджує обидва напрямки й реконструкцію; змістовні мутації відхиляються |
-| ER-10 | Runner, статуси й режими `none/generate/require` | ER-07, ER-09 | Немає прихованого fallback; перевіряються код завершення, аксіоми та відповідність джерела |
-| ER-11 | JSON AST, протоколи й комплект відтворення | ER-05, ER-10 | Артефакт відновлюється точно; зміна входу або доказу виявляється; повторна компіляція відтворювана |
-| ER-12 | Регресії, документація доступного API та підготовка `0.1.0` | ER-01–ER-11 | Пройдено повний критерій приймання першого релізу |
-
-### Мінімальна формальна вертикаль
-
-До завершення всього M2 має з'явитися одна коротка робоча послідовність:
+Main sequence:
 
 ```text
-System → виключення y → сертифікат → proof.lean
-       → справжній Lean → перевірений ReductionResult
+M0: fix the contract
+  ↓
+M1: independent algebraic core
+  ↓
+M2: actual Lean proof + artifacts + release 0.1.0
+  ↓
+M3: coordinates, search, Dnipro adapter
+  ↓
+M4: semi-explicit index-1 DAEs
+  ↓
+M5: derivatives of eliminated variables and further extensions
 ```
 
-Початковий піднабір: дійсні числа, точні раціональні коефіцієнти,
-арифметика, цілі степені, умови ненульовості й нерозкриті функції.
-`Piecewise`, логарифми та корені не оголошуються формально підтримуваними
-до власних інтеграційних тестів. Непідтримуваний експорт повертає явний
-статус; друк схожого виразу не вважається успіхом.
+Within M2, first bring a small end-to-end example to actual Lean compilation,
+then extend the exporter and artifact format. An exploratory check of the
+simplest DAE theorem can follow that example to estimate M4 complexity early.
+It does not change the first release's scope.
 
-### Приймання ER-09 та ER-10
+## 3. M0 — preparation for extraction
 
-- Компіляція виконується із `-DwarningAsError=true`.
-- Дозволений лише піднабір стандартних `propext`, `Classical.choice`,
-  `Quot.sound`; немає `sorryAx` або власних аксіом.
-- Окремо відхиляються неправильне скорочене рівняння, неправильна
-  реконструкція та вилучена необхідна умова.
-- У режимі `require` недоступність інструментів і тайм-аут є явними
-  помилками, а не причиною повернути непідтверджений успіх.
-- Нова теорема прив'язана до фактичного SymPy-входу та його умов.
+Before coding:
 
-### Приймання ER-11
+- Fix the initial API contract and minimum SymPy subset.
+- Map Dnipro modules to the new EquiReduce modules.
+- Preserve exact input data, conditions, and expected regression results.
+- Establish code and material provenance and terms for extraction.
+- Separate technical acceptance from package publication: license, name
+  availability, and release metadata must be finalized before external release
+  rather than replaced with assumptions.
 
-Безпечний декодер підтримує лише задокументований AST без виконання
-довільного коду. Версії формату, ліміти розміру та ідентичність символів
-перевіряються. Стабільний хеш змісту відділений від часових міток
-і локальних шляхів протоколу.
+Each following task uses `todo`, `in_progress`, `blocked`, or `done` status.
+Blockers and completion evidence are retained with the task. All ER tasks
+initially had `todo` status; current statuses are maintained in the report,
+not inferred from the existence of a description in this plan.
 
-### Приймання ER-12: готовність `0.1.0`
+## 4. M1 — independent algebraic core
 
-- Незалежний wheel і sdist; перевірка встановлення в чисте оточення.
-- Пройдена алгебраїчна матриця позитивних і вироджених випадків.
-- Пройдені справжні позитивні й негативні Lean-тести.
-- Приклад 14 → 4 перевірено саме новим конвеєром на незалежній
-  SymPy-фікстурі, а не посиланням на старий журнал Dnipro.
-- Є щонайменше два неелектричні приклади.
-- Приклади реалізованого API виконуються; Sphinx збирається без попереджень.
-- Підтверджені ліцензія, доступність назви та склад дистрибутива.
-
-Результат ER-12 — локально готовий реліз. Публікація в PyPI чи іншому
-сервісі є окремою дією після підготовки цього результату.
-
-## 6. M3 — координати, пошук та інтеграція
-
-| ID | Робота | Залежить від | Критерій завершення |
+| ID | Work | Depends on | Completion criterion |
 |---|---|---|---|
-| ER-13 | Афінні координатні карти й композиція сертифікатів | ER-09, ER-11 | Доведені пряма й обернена карти та повний перехід до вихідних координат |
-| ER-14 | Обмежений пошук, метрики та benchmark Lean | ER-13 | Порядок детермінований; бюджети дотримано; оцінка складності відділена від виміряного часу |
-| ER-15 | Адаптер Dnipro та формальна регресія 4 → 3 | ER-13; автоматичний вибір після ER-14 | Dnipro використовує пакет без зворотної залежності; перевірено весь заявлений ланцюжок редукції |
+| ER-01 | Package skeleton: `pyproject.toml`, `src/equireduce`, exceptions, `py.typed`, tests, and CI | M0 | Wheel installs in a clean environment; import requires neither Dnipro nor Lean |
+| ER-02 | Immutable `System`, exact residuals, unknowns, parameters, and validation | ER-01 | Tests cover empty, rectangular, and invalid inputs; derivatives are explicitly rejected |
+| ER-03 | Conditions, domains, three-valued checks, and coverage | ER-02 | Division preserves excluded zeros; unknown is not reported as proved |
+| ER-04 | Scalar affine elimination and reconstruction composition | ER-03 | Multiple variables are eliminated without cycles; all conditions reach final coordinates |
+| ER-05 | Certificate, independent verifier, `ReductionResult`, and `reduce_system` | ER-04 | Invalid steps are rejected; valid results contain full reconstruction |
+| ER-06 | Exact block elimination | ER-05 | Invertible blocks reduce; singular and undetermined blocks are not treated as invertible |
 
-Спочатку підтримати вручну задану карту, потім пошук сімейства карт.
-Неповний пошук не повинен оголошувати знайдений результат глобальним
-мінімумом. Зміни в Dnipro починати після стабілізації незалежного API.
-Старий математичний код прибирати лише після порівняння регресій,
-щоб не підтримувати дві розбіжні реалізації.
+### ER-01 — minimal skeleton
 
-## 7. M4 — перший клас DAE
+Create only necessary modules, without empty DAE implementations. Configure
+Ruff, type checks, and pytest. Limit initial public exports to the agreed API
+so that extracting internal functions does not accidentally make them stable
+external interfaces.
 
-| ID | Робота | Залежить від | Критерій завершення |
+### ER-02 and ER-03 — data before algorithms
+
+Validate unknown order and uniqueness, declaration of all parameters, the real
+domain, exact numbers, and absence of unsupported nodes. Preserve input before
+transformation; reject `Float` by default.
+
+Separate input assumptions from added conditions. For `ay-b=0`, do not call
+`y=b/a` a global reconstruction without justifying the `a=0` branch.
+Condition consistency, solution coverage, and search completeness must have
+independent statuses.
+
+### ER-04 and ER-05 — first mathematical result
+
+First example: `ay-x=0`, `y+x-1=0`, `a != 0`; eliminate `y`.
+Second: `y-x**2=0`, `f(y)+x-c=0`; preserve the exact argument `f(x**2)`.
+The verifier takes a source-system snapshot and a completed certificate;
+it does not trust a flag set by the reducer.
+
+### ER-06 — extension to blocks
+
+Start with exact square blocks. Add parametric determinants, retained nonlinear
+equations, and zero output unknowns when parameter constraints remain.
+
+**M1 output:** SymPy → verified symbolic reduction → SymPy,
+without claiming a formal Lean proof.
+
+## 5. M2 — Lean, auditing, and the first release
+
+| ID | Work | Depends on | Completion criterion |
 |---|---|---|---|
-| ER-16 | DAE-контракт, типи й рання Lean-теорема про траєкторії | ER-10; контракт спирається на M1 | Зафіксовано клас систем, регулярність, область і двостороннє твердження; найпростіший приклад скомпільовано |
-| ER-17 | Афінний алгебраїчний блок DAE, реконструкція й початкові умови | ER-06, ER-16 | Символьний результат зберігає часові залежності та всі зобов'язання; несумісні початкові дані не виправляються мовчки |
-| ER-18 | Узагальнений DAE-сертифікат, Lean та приймальні тести | ER-11, ER-17 | Для заявленого класу доведена еквівалентність траєкторій на інтервалі |
+| ER-07 | Pin a separate Lean/Mathlib environment | ER-01 | A clean prepared environment compiles a control theorem with known versions |
+| ER-08 | Exporter for a minimal SymPy language | ER-03, ER-07 | Exact numbers, symbols, arithmetic, conditions, and declared functions translate without loss of meaning |
+| ER-09 | Scalar, sequential, and block elimination theorems | ER-05, ER-08; blocks after ER-06 | Actual Lean confirms both directions and reconstruction; meaningful mutations are rejected |
+| ER-10 | Runner, statuses, and `none/generate/require` modes | ER-07, ER-09 | No hidden fallback; exit code, axioms, and source correspondence are checked |
+| ER-11 | JSON AST, run reports, and reproduction bundle | ER-05, ER-10 | Exact artifact replay; input or proof changes are detected; repeat compilation is reproducible |
+| ER-12 | Regressions, available API documentation, and `0.1.0` preparation | ER-01–ER-11 | Full first-release acceptance criteria pass |
 
-Початковий клас (поточне експериментальне уточнення: раціональна
-реконструкція, диференційовні траєкторії; див. [ADR-007](decisions.md)):
+### Minimal formal path
+
+Before all of M2 is complete, establish one short working sequence:
+
+```text
+System → eliminate y → certificate → proof.lean
+       → actual Lean → verified ReductionResult
+```
+
+Initial subset: real numbers, exact rational coefficients, arithmetic, integer
+powers, nonzero conditions, and opaque functions. `Piecewise`, logarithms,
+and roots are not declared formally supported before their own integration
+tests. Unsupported export returns an explicit status; printing a similar-looking
+expression does not count as success.
+
+### ER-09 and ER-10 acceptance
+
+- Compile with `-DwarningAsError=true`.
+- Allow only a subset of standard `propext`, `Classical.choice`, and
+  `Quot.sound`; no `sorryAx` or custom axioms.
+- Separately reject incorrect reduced equations, incorrect reconstruction,
+  and removal of necessary conditions.
+- In `require` mode, unavailable tools and timeouts are explicit errors,
+  not reasons to return unconfirmed success.
+- Bind the new theorem to the actual SymPy input and its conditions.
+
+### ER-11 acceptance
+
+The safe decoder supports only the documented AST, without arbitrary code
+execution. Check format versions, size limits, and symbol identity. Separate
+the stable content hash from timestamps and local run-report paths.
+
+### ER-12 acceptance: `0.1.0` readiness
+
+- Independent wheel and sdist; installation checked in a clean environment.
+- Passing algebraic matrix of positive and degenerate cases.
+- Passing actual positive and negative Lean tests.
+- The 14 → 4 example verified by the new pipeline on an independent SymPy
+  fixture, rather than by reference to an old Dnipro log.
+- At least two examples outside electronics.
+- Executable implemented-API examples; Sphinx builds without warnings.
+- Confirmed license, name availability, and distribution contents.
+
+ER-12 delivers a locally ready release. Publication to PyPI or another service
+is a separate action after preparing that result.
+
+## 6. M3 — coordinates, search, and integration
+
+| ID | Work | Depends on | Completion criterion |
+|---|---|---|---|
+| ER-13 | Affine coordinate charts and certificate composition | ER-09, ER-11 | Forward and inverse charts and full transport to source coordinates are proved |
+| ER-14 | Bounded search, metrics, and Lean benchmark | ER-13 | Deterministic order and enforced budgets; complexity estimates are separate from measured time |
+| ER-15 | Dnipro adapter and formal 4 → 3 regression | ER-13; automatic selection after ER-14 | Dnipro uses the package without a reverse dependency; the entire claimed reduction chain is checked |
+
+Support manually specified charts first, then search a chart family.
+An incomplete search must not describe its result as a global minimum.
+Begin Dnipro changes after stabilizing the independent API. Remove old
+mathematical code only after comparing regressions, avoiding two diverging
+implementations.
+
+## 7. M4 — first DAE class
+
+| ID | Work | Depends on | Completion criterion |
+|---|---|---|---|
+| ER-16 | DAE contract, types, and early Lean trajectory theorem | ER-10; contract builds on M1 | System class, regularity, domain, and bidirectional statement fixed; simplest example compiled |
+| ER-17 | Affine DAE algebraic block, reconstruction, and initial conditions | ER-06, ER-16 | Symbolic result preserves time dependencies and all obligations; inconsistent initial data is not silently corrected |
+| ER-18 | Generalized DAE certificate, Lean, and acceptance tests | ER-11, ER-17 | Interval trajectory equivalence proved for the claimed class |
+
+Initial class (current experimental refinement: rational reconstruction and
+differentiable trajectories; see [ADR-007](decisions.md)):
 
 $$\dot x=f(t,x,y,p),\qquad A(t,x,p)y+b(t,x,p)=0,$$
 
-де алгебраїчний блок оборотний, параметри сталі в часі, а область
-й потрібна регулярність задані явно. Похідні `y` у цьому класі відсутні.
+where the algebraic block is invertible, parameters are constant in time,
+and the domain and required regularity are explicit. This class contains
+no derivatives of `y`.
 
-Перший наскрізний приклад:
+First end-to-end example:
 
 $$\dot x+y=0,\qquad y=x^2
 \quad\longrightarrow\quad
 \dot x+x^2=0,\qquad y=x^2.$$
 
-Потрібно перевірити `y0 = x0**2` для конкретних початкових даних
-і довести допустимість реконструкції на інтервалі. Умови невиродженості
-не можна перевіряти лише в початковий момент. Теорема відповідності
-траєкторій сама по собі не обіцяє їх існування та єдиності.
+Check `y0 = x0**2` for specific initial data and prove interval admissibility
+of reconstruction. Nonsingularity conditions cannot be checked only at the
+initial time. Trajectory correspondence alone does not promise existence
+or uniqueness.
 
-До ER-18 не заявляти DAE як формально підтримувану можливість.
-Якщо ER-16 виявить необхідність звузити клас, спочатку змінити контракт
-і приклади, а не замінювати доказ числовими експериментами.
+Do not claim formal DAE support before ER-18. If ER-16 reveals a need to
+narrow the class, first change the contract and examples rather than replacing
+proof with numerical experiments.
 
-## 8. M5 — подальші диференціальні розширення
+## 8. M5 — further differential extensions
 
-**ER-19:** підтримати похідні реконструйованих алгебраїчних змінних
-після ER-18. Для `y = phi(t, x)` обчислювати й доводити
+**ER-19:** support derivatives of reconstructed algebraic variables after
+ER-18. For `y = phi(t, x)`, compute and prove
 
 $$\dot y=\partial_t\varphi+\partial_x\varphi\,\dot x.$$
 
-Критерії: правило ланцюга перевірене Lean; негладкі точки й породження
-похідних вищого порядку явно обробляються або відхиляються.
-Часозалежні карти, високий індекс і розгалуження — наступні окремі
-задачі після цієї перевірки, без автоматичного включення в ER-19.
+Criteria: Lean verifies the chain rule; nonsmooth points and introduction
+of higher derivatives are explicitly handled or rejected. Time-dependent
+charts, high index, and branching are separate follow-up tasks, not
+automatically part of ER-19.
 
-## 9. Перша робоча ітерація
+## 9. First working iteration
 
-Практичний старт — ER-01–ER-05, без пошуку координат і DAE:
+The practical starting point is ER-01–ER-05, without coordinate search or DAEs:
 
-- [x] Створити каркас пакета та незалежне встановлення.
-- [x] Реалізувати `System.algebraic` й перевірку входу.
-- [x] Реалізувати умови та тристатусне розпізнавання тотожностей.
-- [x] Виключити `y` у прикладі `ay-x=0`, `y+x-1=0` за `a != 0`.
-- [x] Повернути кінцеві SymPy-залишки й реконструкцію.
-- [x] Перевірити незалежний сертифікат в обох напрямках.
-- [x] Додати вироджену гілку, незмінений результат і нелінійну функцію
-  до регресійної матриці.
-- [x] Оновити документацію фактично доступного API.
+- [x] Create the package skeleton and independent installation.
+- [x] Implement `System.algebraic` and input validation.
+- [x] Implement conditions and three-valued identity recognition.
+- [x] Eliminate `y` in `ay-x=0`, `y+x-1=0` under `a != 0`.
+- [x] Return final SymPy residuals and reconstruction.
+- [x] Verify an independent certificate in both directions.
+- [x] Add a degenerate branch, unchanged result, and nonlinear function to
+  the regression matrix.
+- [x] Update documentation for the actually available API.
 
-Після цієї ітерації — перша Lean-вертикаль ER-07–ER-10 для одиничного
-кроку, потім розширення на блоки та завершення релізних критеріїв.
+Follow this iteration with the first ER-07–ER-10 Lean path for a scalar step,
+then extend to blocks and complete the release criteria.
 
-## 10. Правило завершення задачі
+## 10. Task completion rule
 
-Задача позначається `done`, коли є реалізація, перевірені математичні
-умови, потрібні позитивні й негативні тести, узгоджена документація та
-відтворюваний результат. Для формальних задач додаються фактичний журнал
-Lean, версії й контроль аксіом. Для задач пакування — перевірка wheel
-в чистому оточенні.
+A task is marked `done` when implementation, checked mathematical conditions,
+required positive and negative tests, consistent documentation, and a
+reproducible result are present. Formal tasks also require an actual Lean
+log, versions, and axiom auditing. Packaging tasks require a wheel check
+in a clean environment.
 
-Зміни групуються в невеликі тематичні коміти: каркас, модель даних,
-умови, одинична редукція, сертифікати, блоки, Lean, артефакти тощо.
-Пройдений тест генерації тексту не закриває задачу формального доказу.
+Group changes into small focused commits: skeleton, data model, conditions,
+scalar reduction, certificates, blocks, Lean, artifacts, and so on.
+Passing a source-text generation test does not complete a formal proof task.
 
-Оцінки строків уточнюються після першої робочої ітерації та мінімальної
-Lean-вертикалі. Найбільша дослідницька невизначеність — ER-16–ER-19;
-для них спершу потрібні короткі перевірювані прототипи теорем.
+Time estimates are refined after the first working iteration and minimal
+Lean path. ER-16–ER-19 have the greatest research uncertainty; start them
+with short verifiable theorem prototypes.

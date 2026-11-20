@@ -1,47 +1,47 @@
-# Розробка, пакування та випуск
+# Development, packaging, and releases
 
-## Поточний стан
+## Current status
 
-У каталозі є пакет `src/equireduce`, тести, пакування та середовище Lean.
-Використовуйте локальне встановлення `pip install -e '.[dev,docs]'`.
-Публічне ім’я дистрибутива ще не перевірене; `pip install equireduce`
-без локального шляху не є способом встановлення цієї робочої версії.
+The directory contains the `src/equireduce` package, tests, packaging, and a
+Lean environment. Use local installation with `pip install -e '.[dev,docs]'`.
+The public distribution name has not yet been checked; `pip install equireduce`
+without a local path does not install this working version.
 
-## Python-пакет
+## Python package
 
-- Python 3.11+; ім'я імпорту `equireduce`.
-- `src`-структура; метадані й налаштування інструментів у `pyproject.toml`.
-- PEP 517/518/621; початковий build-backend — `setuptools`.
-- Обов'язкова залежність ядра: `sympy>=1.14,<2`; кожен підтримуваний
-  діапазон треба перевірити, починаючи з SymPy 1.14.0.
-- Extras: `dev` для pytest, Hypothesis, Ruff, mypy, build і twine;
-  `docs` для Sphinx і MyST. Lean не встановлюється через extra.
-- Анотації публічного API, `py.typed`, Python docstrings у стилі NumPy.
-- Мова ідентифікаторів і docstrings — англійська; основна документація
-  наразі українська. Англомовний довідник можна додати перед публічним випуском.
+- Python 3.11+; import name `equireduce`.
+- `src` layout; metadata and tool configuration in `pyproject.toml`.
+- PEP 517/518/621; initial build backend `setuptools`.
+- Required core dependency: `sympy>=1.14,<2`; each supported range must be
+  tested, starting with SymPy 1.14.0.
+- Extras: `dev` for pytest, Hypothesis, Ruff, mypy, build, and twine;
+  `docs` for Sphinx and MyST. Lean is not installed through an extra.
+- Public API annotations, `py.typed`, and NumPy-style Python docstrings.
+- Identifiers, docstrings, comments, messages, and project documentation are
+  written in English. Sphinx uses the English locale.
 
-Версія `0.1.0` призначена для першого прийнятого алгебраїчного релізу;
-поточний комплект документації не оголошує цей реліз випущеним.
-До 1.0 несумісні API-зміни документуються в `CHANGELOG.md` і minor-версії.
-Формати сертифікатів мають окремі номери схем.
+Version `0.1.0` is intended for the first accepted algebraic release;
+this documentation does not declare that release published.
+Before 1.0, incompatible API changes are recorded in `CHANGELOG.md` and the
+minor version. Certificate formats have separate schema versions.
 
-## Стиль і структура змін
+## Style and change structure
 
-Ruff: правила `E`, `F`, `I`, `UP`, `B`, `SIM`, довжина рядка 88;
-форматування через `ruff format`. Публічні математичні типи —
-незмінні dataclass, кортежі й незмінні матриці SymPy.
-Загальні `except Exception` без діагностики й приховане наближення
-заборонені в математичному конвеєрі.
+Ruff rules: `E`, `F`, `I`, `UP`, `B`, `SIM`, with line length 88;
+format using `ruff format`. Public mathematical types use immutable
+dataclasses, tuples, and immutable SymPy matrices. Broad `except Exception`
+without diagnostics and hidden approximation are forbidden in the mathematical
+pipeline.
 
-Кожне нове перетворення супроводжується формулюванням теореми,
-умовами допустимості, прикладом, контрприкладом за порушення умов,
-сертифікатом і тестами відповідного рівня.
-Логування за замовчуванням не друкує великі вирази; діагностика
-доступна через структуровані результати й явний рівень подробиць.
+Every new transformation includes a theorem statement, validity conditions,
+an example, a counterexample violating the conditions, a certificate, and
+appropriate tests. Default logging does not print large expressions;
+diagnostics are available through structured results and an explicit verbosity
+level.
 
-## Середовище розробника після створення пакета
+## Developer environment after package creation
 
-Робочий процес з кореня EquiReduce:
+Workflow from the EquiReduce root:
 
 ```bash
 python3 -m venv .venv
@@ -53,26 +53,26 @@ python3 -m venv .venv
 .venv/bin/python -m sphinx -n -W --keep-going -b html docs docs/_build/html
 ```
 
-Sphinx autodoc імпортує локальний пакет для API-довідника. Встановлення
-`.[docs]` включає і ядро із SymPy; Lean для документації не потрібний.
-`docs/requirements.txt` містить лише Sphinx і MyST.
+Sphinx autodoc imports the local package for the API reference.
+Installing `.[docs]` includes the core and SymPy; Lean is not required for
+documentation. `docs/requirements.txt` contains only Sphinx and MyST.
 
-Шаблон `.github/workflows/ci.yml` призначений для окремого репозиторію.
-Поки каталог вкладений у Dnipro, GitHub його автоматично не запускає.
-Локальні перевірки виконуються окремо; GitHub-прогони ще не проведено.
+The `.github/workflows/ci.yml` template targets a separate repository.
+While the directory is nested in Dnipro, GitHub does not run it automatically.
+Local checks run separately; GitHub runs have not yet been performed.
 
-HTML підтримує формули через MathJax; стандартна конфігурація Sphinx
-завантажує його під час перегляду через CDN. Для автономної публікації
-потрібно включити локальну копію MathJax і зафіксувати її версію.
-Це не впливає на саму збірку текстової HTML-документації.
+HTML supports formulas through MathJax; the default Sphinx configuration
+loads it from a CDN when viewing pages. Offline publication requires a local
+copy of MathJax with a pinned version. This does not affect building the
+textual HTML documentation itself.
 
-## Середовище Lean після його перенесення
+## Lean environment after extraction
 
-Окрема папка `lean/` містить `lean-toolchain`, `lakefile.toml` і
-`lake-manifest.json`. Початковий toolchain та ревізія Mathlib вказані
-в [специфікації бекенда](lean.md).
+The separate `lean/` directory contains `lean-toolchain`, `lakefile.toml`,
+and `lake-manifest.json`. The initial toolchain and Mathlib revision are
+specified in the [backend specification](lean.md).
 
-Після створення цієї папки:
+After creating that directory:
 
 ```bash
 cd lean
@@ -82,38 +82,38 @@ cd ..
 .venv/bin/python -m pytest -m lean
 ```
 
-Початкове завантаження потребує мережі. Для невеликого набору імпортів
-слід завантажувати лише потрібні модулі кешу, а не всю Mathlib.
-Під час звичайної редукції бібліотека не встановлює залежності.
+The initial download requires network access. For a small import set, download
+only the required cached modules rather than all of Mathlib.
+The library does not install dependencies during ordinary reduction.
 
-## Ліцензія та походження коду
+## License and code provenance
 
-До публікації треба визначити ліцензію EquiReduce і підтвердити право
-переносити вихідний код та приклади з Dnipro й інших матеріалів.
-Відсутність `LICENSE` не означає дозволу оголосити чужий матеріал MIT.
-Ліцензії SymPy, Lean, Mathlib і транзитивних компонентів зберігаються
-відповідно до їхніх умов. Код залежностей не копіюється в пакет
-без потреби; `.lake` не публікується.
+Before publication, choose an EquiReduce license and confirm permission to
+extract source code and examples from Dnipro and other materials.
+The absence of `LICENSE` does not grant permission to declare someone else's
+material MIT-licensed. Preserve SymPy, Lean, Mathlib, and transitive component
+licenses according to their terms. Dependency source is not copied into the
+package unnecessarily; `.lake` is not published.
 
-Публічна назва `equireduce` на PyPI та адреса репозиторію ще не
-зареєстровані в межах цієї роботи. Їх треба перевірити до випуску.
+The public PyPI name `equireduce` and repository address have not been
+registered as part of this work. They must be checked before release.
 
-## Пакування та реліз
+## Packaging and release
 
-Після проходження [критеріїв готовності](testing.md):
+After meeting the [readiness criteria](testing.md):
 
 ```bash
 .venv/bin/python -m build
 .venv/bin/python -m twine check dist/*
 ```
 
-Wheel встановлюється в чисте оточення, де відсутні checkout Dnipro,
-редакторські шляхи й Lean. Перевіряються імпорт, звичайна алгебраїчна
-редукція та зрозуміла відмова запитаного формального режиму без Lean.
+Install the wheel in a clean environment without a Dnipro checkout, editor
+paths, or Lean. Check import, ordinary algebraic reduction, and a clear failure
+when formal verification is requested without Lean.
 
-Пакет містить Python-код, `py.typed`, ліцензію й необхідні шаблони
-формального бекенда. Результати тестів, локальні кеші, віртуальні
-оточення та великі benchmark-артефакти до wheel не входять.
+The package contains Python code, `py.typed`, a license, and required formal
+backend templates. Test results, local caches, virtual environments, and large
+benchmark artifacts are excluded from the wheel.
 
-Публікація в PyPI, GitHub Releases або іншому сервісі — окрема дія
-після підготовки перевіреного релізу. Ця документація її не виконує.
+Publication to PyPI, GitHub Releases, or another service is a separate action
+after preparing a verified release. This documentation does not perform it.
